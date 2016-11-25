@@ -1,5 +1,6 @@
 local timer = require "timer"
 local ringbuffer = require "utils.ringbuffer"
+local cpml = require "cpml"
 
 local scroller = {}
 local scroller_mt = {}
@@ -15,6 +16,8 @@ local function new(items, options)
 		fixed       = options.fixed or false,
 		switch_time = options.switch_time or 0.2,
 		transform   = options.transform_fn or default_transform,
+		size        = options.size or false,
+		position    = options.position or { x = 0, y = 0 },
 		cursor_data = {},
 		data        = {},
 		_timer = timer.new(),
@@ -52,6 +55,25 @@ function scroller:next(n)
 	tween(self)
 end
 
+function scroller:hit(x, y, click)
+	if not self.size or (not self.fixed and not click) then
+		return false
+	end
+	local p = cpml.vec3(x, y, 0)
+	for i, v in ipairs(self._rb.items) do
+		local b = {
+			min = cpml.vec3(self.data[i].x, self.data[i].y, 0),
+			max = cpml.vec3(self.data[i].x + self.size.w, self.data[i].y + self.size.h, 0)
+		}
+		if cpml.intersect.point_aabb(p, b) then
+			self._rb.current = i
+			tween(self)
+			return true
+		end
+	end
+	return false
+end
+
 function scroller:update(dt)
 	self._timer:update(dt)
 	for i, v in ipairs(self._rb.items) do
@@ -61,8 +83,12 @@ function scroller:update(dt)
 			ipos = ipos - self._pos
 		end
 		self.transform(self.data[i], ipos, #self._rb.items, i)
+		self.data[i].x = self.data[i].x + self.position.x
+		self.data[i].y = self.data[i].y + self.position.y
 	end
 	self.transform(self.cursor_data, self.fixed and self._pos or 0, #self._rb.items, 1)
+	self.cursor_data.x = self.cursor_data.x + self.position.x
+	self.cursor_data.y = self.cursor_data.y + self.position.y
 
 	while #self.data > #self._rb.items do
 		table.remove(self.data)

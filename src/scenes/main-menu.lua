@@ -21,12 +21,24 @@ function menu:enter()
 		self.y = math.floor(offset * spacing)
 	end
 
+	local topx = love.window.toPixels
 	self.scroller = scroller(items, {
 		fixed = true,
-		transform_fn = transform
+		transform_fn = transform,
+		size = { w = love.window.toPixels(200), h = love.window.toPixels(40) },
+		position = { x = anchor:left() + topx(100), y = anchor:center_y() - topx(50) }
 	})
 
 	self.logo = love.graphics.newImage("assets/splash/logo-exmoe.png")
+end
+
+function menu:go()
+	local item = self.scroller:get()
+	if item.action then
+		item.action()
+		return
+	end
+	error "No action for the current item"
 end
 
 function menu:keypressed(k)
@@ -39,19 +51,30 @@ function menu:keypressed(k)
 		return
 	end
 	if k == "return" then
-		local item = self.scroller:get()
-		if item.action then
-			item.action()
-			return
-		end
-		error "No action for the current item"
+		self:go()
 	end
 end
 
-function menu:leave()
+function menu:mousepressed(x, y, b)
+	if self.scroller:hit(x, y, b == 1) then
+		self.ready = self.scroller:get()
+	end
+end
+
+function menu:mousereleased(x, y, b)
+	if not self.ready then
+		return
+	end
+
+	if self.scroller:hit(x, y, b == 1) then
+		if self.ready == self.scroller:get() then
+			self:go()
+		end
+	end
 end
 
 function menu:update(dt)
+	self.scroller:hit(love.mouse.getPosition())
 	self.scroller:update(dt)
 end
 
@@ -63,22 +86,18 @@ function menu:draw()
 	love.graphics.draw(self.logo, x, y, 0, s, s)
 	local font = get_font(topx(16))
 	love.graphics.setFont(font)
-	love.graphics.push()
-	love.graphics.translate(x, y + topx(100))
-	love.graphics.setColor(50, 50, 50)
-
+	love.graphics.setColor(255, 255, 255, 50)
 	love.graphics.rectangle("fill",
-		self.scroller.cursor_data.x - topx(6),
-		self.scroller.cursor_data.y - topx(6),
-		topx(180),
-		topx(30)
+		self.scroller.cursor_data.x,
+		self.scroller.cursor_data.y,
+		self.scroller.size.w,
+		self.scroller.size.h
 	)
 
 	love.graphics.setColor(255, 255, 255)
 	for _, item in ipairs(self.scroller.data) do
-		love.graphics.print(item.label, item.x, item.y)
+		love.graphics.print(item.label, item.x + topx(10), item.y + topx(10))
 	end
-	love.graphics.pop()
 end
 
 return menu

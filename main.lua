@@ -14,9 +14,10 @@ function love.load(args)
 		end
 	end
 	anchor:set_overscan(0.1)
+	anchor:update()
 
 	gs.registerEvents {
-		"update", "keypressed"
+		"update", "keypressed", "mousepressed", "mousereleased"
 	}
 	gs.switch(require "scenes.main-menu")
 end
