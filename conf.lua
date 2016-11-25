@@ -2,10 +2,26 @@
 -- TODO: Read a preferences file for conf stuff?
 _G.FLAGS = {
 	game_version = "LD3x-0.0.0",
-	debug_mode   = true,
-	show_perfhud = false,
+	debug_mode   = not love.filesystem.isFused(),
 	show_overscan = false,
 	headless      = false
+}
+_G.FLAGS.show_perfhud = _G.FLAGS.debug_mode
+
+local use = {
+	highdpi_hack = true,
+	hot_reloader = true,
+	fps_in_title = _G.FLAGS.debug_mode,
+	handle_screenshots = true,
+	event_poll   = true,
+	love_draw    = true,
+	console      = false,
+	console_font = {
+		path = "assets/fonts/Inconsolata-Regular.ttf",
+		size = 16
+	},
+	log_header   = [[Please report this on GitHub at https://github.com/excessive/ludum-dare-36 or
+send a DM on Twitter to @LandonManning or @shakesoda.]]
 }
 
 if not _G.FLAGS.headless then
@@ -33,40 +49,24 @@ local flags = {
 	highdpi        = true
 }
 
-local dpi_scale = 1
-if love.system.getOS() == "Linux" and not _G.FLAGS.headless then
+if use.highdpi_hack and love.system.getOS() == "Linux" and not _G.FLAGS.headless then
 	flags.highdpi = false
 
 	local lume = require "lume"
 	local f = io.popen("gsettings get org.gnome.desktop.interface scaling-factor")
 	local _scale = lume.split(f:read(), " ")
 	if _scale[2] then
-		dpi_scale = tonumber(_scale[2])
+		local dpi_scale = tonumber(_scale[2])
 		flags.width = flags.width * dpi_scale
 		flags.height = flags.height * dpi_scale
 		love.window.toPixels = function(v)
 			return v * dpi_scale
 		end
+		love.window.getPixelScale = function()
+			return dpi_scale
+		end
 	end
 end
-
-local use = {
-	love3d       = false,
-	lvui         = false,
-	hot_reloader = true,
-	fps_in_title = _G.FLAGS.debug_mode,
-	handle_screenshots = true,
-	event_poll   = true,
-	love_draw    = true,
-	perfhud      = false,
-	console      = false,
-	console_font = {
-		path = "assets/fonts/Inconsolata-Regular.ttf",
-		size = 16
-	},
-	log_header   = [[Please report this on GitHub at https://github.com/excessive/ludum-dare-36 or
-send a DM on Twitter to @LandonManning or @shakesoda.]]
-}
 
 function love.conf(t)
 	t.version = "0.10.1"
@@ -75,8 +75,9 @@ function love.conf(t)
 	end
 	t.gammacorrect = true -- Always use gamma correction.
 	t.accelerometerjoystick = false -- Disable joystick accel on mobile
-	t.modules.physics = not use.love3d -- Box2D is useless for 3D
-	-- t.modules.audio = false
+	t.modules.physics = false
+	t.modules.audio = not _G.FLAGS.headless
+
 	io.stdout:setvbuf("no") -- Don't delay prints.
 end
 
@@ -178,9 +179,35 @@ function fire.take_screenshot()
 	ss:encode("png", path)
 end
 
+local fix_love10_colors = function(t) return t end
+if select(2, love.getVersion()) <= 10 then
+	fix_love10_colors = function(t)
+		return { t[1] * 255, t[2] * 255, t[3] * 255, t[4] * 255 }
+	end
+end
+
+local perfhud = {
+	color = {
+		bg = fix_love10_colors { 0.0, 0.0, 0.0, 0.75 },
+		good = fix_love10_colors { 0.5, 1.0, 0.5, 0.75 },
+		bad  = fix_love10_colors { 1.0, 0.0, 0.0, 1.0 }
+	},
+	limit = 1/20,
+	target = 1/60 + 1/400, -- tolerance
+	data = {},
+	pos = {
+		x = love.window.toPixels(10),
+		y = love.window.toPixels(10)
+	},
+	max_samples = 120,
+	bar_width = love.window.toPixels(5),
+	height    = love.window.toPixels(40),
+}
+perfhud.spacing   = math.floor(perfhud.bar_width * 1.2)
+perfhud.width     = perfhud.spacing * perfhud.max_samples - (perfhud.spacing - perfhud.bar_width)
+
 local l3d_loaded     = false
 local console_loaded = false
-local perfhud_loaded = false
 
 local colors = {
 	white = { bg = { 255, 255, 255, 200 }, fg = { 0, 0, 0, 255 }  },
@@ -299,11 +326,6 @@ function love.run()
 		fire.set_font(love.graphics.newFont(math.floor(love.window.toPixels(16))))
 	end
 
-	if use.perfhud and not perfhud_loaded then
-		perfhud_loaded = true
-		_G.perfhud = require("perfhud")(870, 110, 200, 100, 1/30)
-	end
-
 	if console then
 		if use.hot_reloader then
 			console.clearCommand("restart")
@@ -315,16 +337,14 @@ function love.run()
 				end
 			)
 		end
-		if use.perfhud then
-			console.clearCommand("perfhud")
-			console.defineCommand(
-				"perfhud",
-				"Toggle framerate overlay.",
-				function()
-					FLAGS.show_perfhud = not FLAGS.show_perfhud
-				end
-			)
-		end
+		console.clearCommand("perfhud")
+		console.defineCommand(
+			"perfhud",
+			"Toggle framerate overlay.",
+			function()
+				_G.FLAGS.show_perfhud = not _G.FLAGS.show_perfhud
+			end
+		)
 	end
 
 	if use.hot_reloader then
@@ -336,18 +356,11 @@ function love.run()
 		for i=1,3 do love.math.random() end
 	end
 
-
 	if love.event then
 		love.event.pump()
 	end
 
 	if love.load then love.load(arg) end
-
-	local lvui = false
-	if use.lvui then
-		lvui = require "lvui"
-		lvui.hook()
-	end
 
 	-- We don't want the first frame's dt to include time taken by love.load.
 	if love.timer then love.timer.step() end
@@ -358,14 +371,14 @@ function love.run()
 	-- Main loop time.
 	while true do
 		fire.bind("f8", function()
-			FLAGS.debug_mode = not FLAGS.debug_mode
+			_G.FLAGS.debug_mode = not _G.FLAGS.debug_mode
 		end)
-		if FLAGS.debug_mode then
+		if _G.FLAGS.debug_mode then
 			fire.bind("f9", function()
-				FLAGS.show_perfhud = not FLAGS.show_perfhud
+				_G.FLAGS.show_perfhud = not _G.FLAGS.show_perfhud
 			end)
 			fire.bind("f10", function()
-				FLAGS.show_overscan = not FLAGS.show_overscan
+				_G.FLAGS.show_overscan = not _G.FLAGS.show_overscan
 			end)
 		end
 		-- Process events.
@@ -412,6 +425,10 @@ function love.run()
 			fire.clear_binds()
 		end
 
+		if _G.FLAGS.debug_mode then
+			fire.print("DEBUG MODE", 0, 0, "red")
+		end
+
 		if use.hot_reloader and reset then
 			break
 		end
@@ -450,15 +467,32 @@ function love.run()
 
 			if console then console.draw() end
 
-			if use.perfhud then
-				perfhud:update(skip_time or dt)
-				if FLAGS.show_perfhud then
-					perfhud:draw()
+			table.insert(perfhud.data, skip_time or dt)
+			while #perfhud.data > perfhud.max_samples do
+				table.remove(perfhud.data, 1)
+			end
+			if _G.FLAGS.show_perfhud then
+				love.graphics.setColor(perfhud.color.bg)
+				love.graphics.rectangle("fill", perfhud.pos.x, perfhud.pos.y, perfhud.width, perfhud.height)
+
+				for i = #perfhud.data, 1, -1 do
+					local x = (i-1) * perfhud.spacing
+					local bar_height = perfhud.height * (perfhud.data[i] / perfhud.limit)
+					if perfhud.data[i] <= perfhud.target then
+						love.graphics.setColor(perfhud.color.good)
+					else
+						love.graphics.setColor(perfhud.color.bad)
+					end
+					love.graphics.rectangle("fill",
+						perfhud.pos.x + x,
+						perfhud.pos.y + perfhud.height - bar_height,
+						perfhud.bar_width, bar_height
+					)
 				end
 			end
 
 			love.graphics.origin()
-			if FLAGS.debug_mode then
+			if _G.FLAGS.debug_mode then
 				local f = fire.get_font()
 				local w = f:getWidth(" ")
 				local h = f:getHeight()
@@ -493,7 +527,7 @@ function love.run()
 				love.window.setTitle(string.format(
 					"%s - %s (%5.4fms/f %2.2ffps)",
 					flags.title,
-					FLAGS.game_version,
+					_G.FLAGS.game_version,
 					love.timer.getAverageDelta() * 1000,
 					love.timer.getFPS()
 				))

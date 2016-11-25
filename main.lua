@@ -7,7 +7,10 @@ _G.EVENT = require "signal".new()
 function love.load(args)
 	for k, v in pairs(args) do
 		if v == "--debug" then
-			_G.DEBUG = true
+			_G.FLAGS.debug_mode = true
+		end
+		if v == "--hud" then
+			_G.FLAGS.show_perfhud = true
 		end
 	end
 	anchor:set_overscan(0.1)
@@ -39,7 +42,7 @@ function love.draw()
 		top:draw()
 	end
 
-	if _G.DEBUG then
+	if _G.FLAGS.show_overscan then
 		draw_overscan()
 	end
 end

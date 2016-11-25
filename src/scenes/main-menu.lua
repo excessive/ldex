@@ -1,6 +1,7 @@
 local tiny = require "tiny"
 local scroller = require "utils.scroller"
 local memoize  = require "memoize"
+local anchor   = require "anchor"
 local get_font = memoize(love.graphics.newFont)
 
 local menu = {}
@@ -24,6 +25,8 @@ function menu:enter()
 		fixed = true,
 		transform_fn = transform
 	})
+
+	self.logo = love.graphics.newImage("assets/splash/logo-exmoe.png")
 end
 
 function menu:keypressed(k)
@@ -53,17 +56,22 @@ function menu:update(dt)
 end
 
 function menu:draw()
-	local font = get_font(love.window.toPixels(16))
+	local topx = love.window.toPixels
+	local x, y = anchor:left() + topx(100), anchor:center_y() - topx(150)
+	local s = love.window.getPixelScale()
+	love.graphics.setColor(255, 255, 255, 255)
+	love.graphics.draw(self.logo, x, y, 0, s, s)
+	local font = get_font(topx(16))
 	love.graphics.setFont(font)
 	love.graphics.push()
-	love.graphics.translate(love.window.toPixels(200), love.window.toPixels(360))
+	love.graphics.translate(x, y + topx(100))
 	love.graphics.setColor(50, 50, 50)
 
 	love.graphics.rectangle("fill",
-		self.scroller.cursor_data.x - 12,
-		self.scroller.cursor_data.y - 12,
-		love.window.toPixels(180),
-		love.window.toPixels(30)
+		self.scroller.cursor_data.x - topx(6),
+		self.scroller.cursor_data.y - topx(6),
+		topx(180),
+		topx(30)
 	)
 
 	love.graphics.setColor(255, 255, 255)

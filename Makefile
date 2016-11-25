@@ -11,7 +11,7 @@ run:
 
 .PHONY: debug
 debug:
-	love --fused . --debug
+	love --fused . --debug --hud
 
 .PHONY: clean
 clean:
