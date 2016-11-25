@@ -11,18 +11,20 @@ local function default_transform(self, offset, count, index)
 	self.y = math.floor(offset * spacing)
 end
 
-local function new(items, transform_fn)
+local function new(items, options)
 	local t = {
-		switch_time = 0.2,
-		timer     = timer.new(),
-		data      = {},
-		transform = transform_fn or default_transform,
-		_rb  = ringbuffer(items),
-		_pos = 1,
+		fixed       = options.fixed or false,
+		switch_time = options.switch_time or 0.2,
+		transform   = options.transform_fn or default_transform,
+		cursor_data = {},
+		data        = {},
+		_timer = timer.new(),
+		_rb    = ringbuffer(items),
+		_pos   = 1,
 		_tween = false,
 	}
 	t = setmetatable(t, scroller_mt)
-	t:update(0)
+	t:update()
 	return t
 end
 
@@ -32,9 +34,13 @@ scroller_mt.__call  = function(_, ...)
 end
 local function tween(self)
 	if self._tween then
-		self.timer:cancel(self._tween)
+		self._timer:cancel(self._tween)
 	end
-	self._tween = self.timer:tween(self.switch_time, self, { _pos = self._rb.current }, "out-back")
+	self._tween = self._timer:tween(self.switch_time, self, { _pos = self._rb.current }, "out-back")
+end
+
+function scroller:get()
+	return self._rb.items[self._rb.current]
 end
 
 function scroller:prev(n)
@@ -48,11 +54,17 @@ function scroller:next(n)
 end
 
 function scroller:update(dt)
-	self.timer:update(dt)
+	self._timer:update(dt)
 	for i, v in ipairs(self._rb.items) do
 		self.data[i] = setmetatable({ x = 0, y = 0 }, { __index = v })
-		self.transform(self.data[i], i - self._pos, #self._rb.items, i)
+		local ipos = i
+		if not self.fixed then
+			ipos = ipos - self._pos
+		end
+		self.transform(self.data[i], ipos, #self._rb.items, i)
 	end
+	self.transform(self.cursor_data, self.fixed and self._pos or 0, #self._rb.items, 1)
+
 	while #self.data > #self._rb.items do
 		table.remove(self.data)
 	end
