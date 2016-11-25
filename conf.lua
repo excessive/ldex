@@ -580,12 +580,12 @@ function love.errhand(msg)
 	local font_path = "assets/fonts/NotoSans-Regular.ttf"
 	local head, font
 	if love.filesystem.isFile(font_path) then
-		head = love.graphics.setNewFont(font_path, math.floor(love.window.toPixels(22)))
-		font = love.graphics.setNewFont(font_path, math.floor(love.window.toPixels(14)))
+		head = love.graphics.newFont(font_path, math.floor(love.window.toPixels(22)))
+		font = love.graphics.newFont(font_path, math.floor(love.window.toPixels(14)))
 	else
 		print "Error screen font missing, using default instead."
-		head = love.graphics.setNewFont(math.floor(love.window.toPixels(22)))
-		font = love.graphics.setNewFont(math.floor(love.window.toPixels(14)))
+		head = love.graphics.newFont(math.floor(love.window.toPixels(22)))
+		font = love.graphics.newFont(math.floor(love.window.toPixels(14)))
 	end
 
 	love.graphics.setBackgroundColor(rgba(0xFF1E1E2C))
@@ -648,13 +648,6 @@ function love.errhand(msg)
 				return
 			elseif e == "keypressed" and a == "escape" then --or e == "mousereleased" then
 				return
-				-- local name = love.window.getTitle()
-				-- if #name == 0 then name = "Game" end
-				-- local buttons = {"OK", "Cancel"}
-				-- local pressed = love.window.showMessageBox("Quit?", "Quit "..name.."?", buttons)
-				-- if pressed == 1 then
-				-- 	return
-				-- end
 			end
 		end
 
