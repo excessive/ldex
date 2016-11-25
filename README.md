@@ -1,2 +1,3 @@
-# lvfx
-BGFX-style API wrapper around love.graphics.
+# ldex
+
+ludum dare framework thing
