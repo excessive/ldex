@@ -1,6 +1,9 @@
-local gs   = require "gamestate"
+local cpml = require "cpml"
 local fire = require "fire"
 local anchor = require "anchor"
+fire.save_the_world()
+
+local gs   = require "gamestate"
 
 _G.EVENT = require "signal".new()
 
@@ -17,7 +20,9 @@ function love.load(args)
 	anchor:update()
 
 	gs.registerEvents {
-		"update", "keypressed", "mousepressed", "mousereleased"
+		"update", "keypressed",
+		"mousepressed", "mousereleased",
+		"touchpressed", "touchreleased"
 	}
 	gs.switch(require "scenes.main-menu")
 end

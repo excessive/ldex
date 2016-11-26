@@ -10,13 +10,15 @@ function menu:enter()
 	local items = {
 		{ label = "Play" },
 		{ label = "Online" },
+		{ label = "Debug" },
+		{ label = "Extras" },
 		{ label = "Options" },
 		{ label = "Exit", action = function()
 			love.event.quit()
 		end }
 	}
 	local transform = function(self, offset, count, index)
-		local spacing = love.window.toPixels(50)
+		local spacing = love.window.toPixels(40)
 		self.x = 0
 		self.y = math.floor(offset * spacing)
 	end
@@ -53,6 +55,14 @@ function menu:keypressed(k)
 	if k == "return" then
 		self:go()
 	end
+end
+
+function menu:touchpressed(id, x, y)
+	self:mousepressed(x, y, 1)
+end
+
+function menu:touchreleased(id, x, y)
+	self:mousereleased(x, y, 1)
 end
 
 function menu:mousepressed(x, y, b)
