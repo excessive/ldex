@@ -55,8 +55,8 @@ if use.highdpi_hack and love.system.getOS() == "Linux" and not _G.FLAGS.headless
 	local lume = require "lume"
 	local f = io.popen("gsettings get org.gnome.desktop.interface scaling-factor")
 	local _scale = lume.split(f:read(), " ")
-	if _scale[2] then
-		local dpi_scale = tonumber(_scale[2])
+	local dpi_scale = _scale[2] and tonumber(_scale[2]) or 1.0
+	if dpi_scale >= 0.5 then
 		flags.width = flags.width * dpi_scale
 		flags.height = flags.height * dpi_scale
 		love.window.toPixels = function(v)
