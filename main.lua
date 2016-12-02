@@ -1,14 +1,12 @@
-local cpml = require "cpml"
-local fire = require "fire"
+local fire   = require "fire"
 local anchor = require "anchor"
 fire.save_the_world()
 
-local gs   = require "gamestate"
-
 _G.EVENT = require "signal".new()
+_G.GS    = require "gamestate"
 
 function love.load(args)
-	for k, v in pairs(args) do
+	for _, v in pairs(args) do
 		if v == "--debug" then
 			_G.FLAGS.debug_mode = true
 		end
@@ -16,15 +14,16 @@ function love.load(args)
 			_G.FLAGS.show_perfhud = true
 		end
 	end
+
 	anchor:set_overscan(0.1)
 	anchor:update()
 
-	gs.registerEvents {
+	_G.GS.registerEvents {
 		"update", "keypressed",
 		"mousepressed", "mousereleased",
 		"touchpressed", "touchreleased"
 	}
-	gs.switch(require "scenes.main-menu")
+	_G.GS.switch(require "scenes.main-menu")
 end
 
 function love.update(dt)
@@ -41,7 +40,8 @@ local function draw_overscan()
 end
 
 function love.draw()
-	local top = gs.current()
+	local top = _G.GS.current()
+
 	if not top.draw then
 		fire.print("no draw function on the top screen.", 0, 0, "red")
 	else

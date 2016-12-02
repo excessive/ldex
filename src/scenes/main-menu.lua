@@ -1,40 +1,41 @@
-local tiny = require "tiny"
-local scroller = require "utils.scroller"
-local memoize  = require "memoize"
 local anchor   = require "anchor"
+local memoize  = require "memoize"
+local tiny     = require "tiny"
+local scroller = require "utils.scroller"
 local get_font = memoize(love.graphics.newFont)
+local topx     = love.window.toPixels
+local scene    = {}
 
-local menu = {}
-
-function menu:enter()
+function scene:enter()
 	local items = {
 		{ label = "Play" },
 		{ label = "Online" },
 		{ label = "Debug" },
 		{ label = "Extras" },
-		{ label = "Options" },
+		{ label = "Options", action = function()
+			_G.GS.switch(require "scenes.options")
+		end },
 		{ label = "Exit", action = function()
 			love.event.quit()
 		end }
 	}
+
 	local transform = function(self, offset, count, index)
-		local spacing = love.window.toPixels(40)
 		self.x = 0
-		self.y = math.floor(offset * spacing)
+		self.y = math.floor(offset * topx(40))
 	end
 
-	local topx = love.window.toPixels
 	self.scroller = scroller(items, {
-		fixed = true,
+		fixed        = true,
 		transform_fn = transform,
-		size = { w = love.window.toPixels(200), h = love.window.toPixels(40) },
-		position = { x = anchor:left() + topx(100), y = anchor:center_y() - topx(50) }
+		size         = { w = topx(200), h = topx(40) },
+		position     = { x = anchor:left() + topx(100), y = anchor:center_y() - topx(50) }
 	})
 
 	self.logo = love.graphics.newImage("assets/splash/logo-exmoe.png")
 end
 
-function menu:go()
+function scene:go()
 	local item = self.scroller:get()
 	if item.action then
 		item.action()
@@ -43,7 +44,7 @@ function menu:go()
 	error "No action for the current item"
 end
 
-function menu:keypressed(k)
+function scene:keypressed(k)
 	if k == "up" then
 		self.scroller:prev()
 		return
@@ -57,21 +58,21 @@ function menu:keypressed(k)
 	end
 end
 
-function menu:touchpressed(id, x, y)
+function scene:touchpressed(id, x, y)
 	self:mousepressed(x, y, 1)
 end
 
-function menu:touchreleased(id, x, y)
+function scene:touchreleased(id, x, y)
 	self:mousereleased(x, y, 1)
 end
 
-function menu:mousepressed(x, y, b)
+function scene:mousepressed(x, y, b)
 	if self.scroller:hit(x, y, b == 1) then
 		self.ready = self.scroller:get()
 	end
 end
 
-function menu:mousereleased(x, y, b)
+function scene:mousereleased(x, y, b)
 	if not self.ready then
 		return
 	end
@@ -83,19 +84,23 @@ function menu:mousereleased(x, y, b)
 	end
 end
 
-function menu:update(dt)
+function scene:update(dt)
 	self.scroller:hit(love.mouse.getPosition())
 	self.scroller:update(dt)
 end
 
-function menu:draw()
-	local topx = love.window.toPixels
+function scene:draw()
+	love.graphics.setColor(255, 255, 255, 255)
+
+	-- Draw logo
 	local x, y = anchor:left() + topx(100), anchor:center_y() - topx(150)
 	local s = love.window.getPixelScale()
-	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.draw(self.logo, x, y, 0, s, s)
+
 	local font = get_font(topx(16))
 	love.graphics.setFont(font)
+
+	-- Draw highlight bar
 	love.graphics.setColor(255, 255, 255, 50)
 	love.graphics.rectangle("fill",
 		self.scroller.cursor_data.x,
@@ -104,10 +109,11 @@ function menu:draw()
 		self.scroller.size.h
 	)
 
+	-- Draw items
 	love.graphics.setColor(255, 255, 255)
 	for _, item in ipairs(self.scroller.data) do
 		love.graphics.print(item.label, item.x + topx(10), item.y + topx(10))
 	end
 end
 
-return menu
+return scene

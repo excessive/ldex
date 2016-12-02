@@ -1,27 +1,26 @@
 -- Game flags (beyond love's own)
 -- TODO: Read a preferences file for conf stuff?
 _G.FLAGS = {
-	game_version = "LD3x-0.0.0",
-	debug_mode   = not love.filesystem.isFused(),
+	game_version  = "LD3x-0.0.0",
+	debug_mode    = not love.filesystem.isFused(),
 	show_overscan = false,
 	headless      = false
 }
 _G.FLAGS.show_perfhud = _G.FLAGS.debug_mode
 
 local use = {
-	highdpi_hack = true,
-	hot_reloader = true,
-	fps_in_title = _G.FLAGS.debug_mode,
+	highdpi_hack       = true,
+	hot_reloader       = true,
+	fps_in_title       = _G.FLAGS.debug_mode,
 	handle_screenshots = true,
-	event_poll   = true,
-	love_draw    = true,
-	console      = false,
-	console_font = {
+	event_poll         = true,
+	love_draw          = true,
+	console            = false,
+	console_font       = {
 		path = "assets/fonts/Inconsolata-Regular.ttf",
 		size = 16
 	},
-	log_header   = [[Please report this on GitHub at https://github.com/excessive/ludum-dare-36 or
-send a DM on Twitter to @LandonManning or @shakesoda.]]
+	log_header         = "Please report this on GitHub at https://github.com/excessive/ludum-dare-37 or\nsend a DM on Twitter to @LandonManning, @shakesoda, or @josefnpat."
 }
 
 if not _G.FLAGS.headless then
@@ -38,7 +37,7 @@ love.filesystem.setRequirePath(
 
 -- Specify window flags here because we use some of them for the error screen.
 local flags = {
-	title          = "exmoe ld engine",
+	title          = "exmoe Ludum Dare Engine",
 	width          = 1280,
 	height         = 720,
 	fullscreen     = false,
@@ -52,16 +51,19 @@ local flags = {
 if use.highdpi_hack and love.system.getOS() == "Linux" and not _G.FLAGS.headless then
 	flags.highdpi = false
 
-	local lume = require "lume"
-	local f = io.popen("gsettings get org.gnome.desktop.interface scaling-factor")
-	local _scale = lume.split(f:read(), " ")
+	local lume      = require "lume"
+	local f         = io.popen("gsettings get org.gnome.desktop.interface scaling-factor")
+	local _scale    = lume.split(f:read(), " ")
 	local dpi_scale = _scale[2] and tonumber(_scale[2]) or 1.0
+
 	if dpi_scale >= 0.5 then
-		flags.width = flags.width * dpi_scale
+		flags.width  = flags.width  * dpi_scale
 		flags.height = flags.height * dpi_scale
+
 		love.window.toPixels = function(v)
 			return v * dpi_scale
 		end
+
 		love.window.getPixelScale = function()
 			return dpi_scale
 		end
@@ -69,14 +71,16 @@ if use.highdpi_hack and love.system.getOS() == "Linux" and not _G.FLAGS.headless
 end
 
 function love.conf(t)
-	t.version = "0.10.1"
+	t.version = "0.10.2"
+
 	for k, v in pairs(flags) do
 		t.window[k] = v
 	end
-	t.gammacorrect = true -- Always use gamma correction.
+
+	t.gammacorrect          = true -- Always use gamma correction.
 	t.accelerometerjoystick = false -- Disable joystick accel on mobile
-	t.modules.physics = false
-	t.modules.audio = not _G.FLAGS.headless
+	t.modules.physics       = false
+	t.modules.audio         = not _G.FLAGS.headless
 
 	io.stdout:setvbuf("no") -- Don't delay prints.
 end

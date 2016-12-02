@@ -32,6 +32,10 @@ function ringbuffer:prev()
 	return self:get()
 end
 
+function ringbuffer:reset()
+	self.current = 1
+end
+
 function ringbuffer:insert(item, ...)
 	if not item then
 		return

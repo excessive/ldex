@@ -13,11 +13,11 @@ end
 
 local function new(items, options)
 	local t = {
-		fixed       = options.fixed or false,
-		switch_time = options.switch_time or 0.2,
+		fixed       = options.fixed        or false,
+		switch_time = options.switch_time  or 0.2,
 		transform   = options.transform_fn or default_transform,
-		size        = options.size or false,
-		position    = options.position or { x = 0, y = 0 },
+		size        = options.size         or false,
+		position    = options.position     or { x = 0, y = 0 },
 		cursor_data = {},
 		data        = {},
 		_timer = timer.new(),
@@ -26,7 +26,7 @@ local function new(items, options)
 		_tween = false,
 	}
 	t = setmetatable(t, scroller_mt)
-	t:update()
+	t:reset()
 	return t
 end
 
@@ -46,13 +46,36 @@ function scroller:get()
 end
 
 function scroller:prev(n)
-	for i = 1, (n or 1) do self._rb:prev() end
-	tween(self)
+	for _ = 1, (n or 1) do self._rb:prev() end
+	local item = self:get()
+	if item.skip then
+		self:prev()
+	else
+		tween(self)
+	end
 end
 
 function scroller:next(n)
-	for i = 1, (n or 1) do self._rb:next() end
-	tween(self)
+	for _ = 1, (n or 1) do self._rb:next() end
+	local item = self:get()
+	if item.skip then
+		self:next()
+	else
+		tween(self)
+	end
+end
+
+function scroller:reset()
+	self._rb:reset()
+
+	-- If you manage to land on a scroller that is bad mojo, go to the next one
+	local item = self:get()
+	if item.skip then
+		self:next()
+	end
+
+	-- throw in a big number to force an initial skip to not animate
+	self:update(math.huge)
 end
 
 function scroller:hit(x, y, click)
