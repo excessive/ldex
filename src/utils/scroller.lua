@@ -83,12 +83,12 @@ function scroller:hit(x, y, click)
 		return false
 	end
 	local p = cpml.vec3(x, y, 0)
-	for i, v in ipairs(self._rb.items) do
+	for i, item in ipairs(self._rb.items) do
 		local b = {
 			min = cpml.vec3(self.data[i].x, self.data[i].y, 0),
 			max = cpml.vec3(self.data[i].x + self.size.w, self.data[i].y + self.size.h, 0)
 		}
-		if cpml.intersect.point_aabb(p, b) then
+		if not item.skip and cpml.intersect.point_aabb(p, b) then
 			self._rb.current = i
 			tween(self)
 			return true

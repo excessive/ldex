@@ -1,4 +1,5 @@
 local anchor   = require "anchor"
+local i18n     = require "i18n"
 local memoize  = require "memoize"
 local tiny     = require "tiny"
 local scroller = require "utils.scroller"
@@ -7,15 +8,20 @@ local topx     = love.window.toPixels
 local scene    = {}
 
 function scene:enter()
+	-- Prepare language
+	self.language = i18n()
+	self.language:set_fallback("en")
+	self.language:set_locale(_G.PREFERENCES.language)
+	self.language:load(string.format("assets/locales/%s.lua", _G.PREFERENCES.language))
+
 	local items = {
-		{ label = "Play" },
-		{ label = "Online" },
-		{ label = "Debug" },
-		{ label = "Extras" },
-		{ label = "Options", action = function()
-			_G.GS.switch(require "scenes.options")
+		{ label = "new-game" },
+		{ label = "play-online" },
+		{ label = "debug" },
+		{ label = "options", action = function()
+			_G.SCENE.switch(require "scenes.options-menu")
 		end },
-		{ label = "Exit", action = function()
+		{ label = "exit", action = function()
 			love.event.quit()
 		end }
 	}
@@ -112,7 +118,8 @@ function scene:draw()
 	-- Draw items
 	love.graphics.setColor(255, 255, 255)
 	for _, item in ipairs(self.scroller.data) do
-		love.graphics.print(item.label, item.x + topx(10), item.y + topx(10))
+		local text, duration, audio, fallback = self.language:get(item.label)
+		love.graphics.print(text, item.x + topx(10), item.y + topx(10))
 	end
 end
 

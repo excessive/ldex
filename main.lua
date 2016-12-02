@@ -1,9 +1,10 @@
-local fire   = require "fire"
 local anchor = require "anchor"
+local cpml   = require "cpml"
+local fire   = require "fire"
 fire.save_the_world()
 
 _G.EVENT = require "signal".new()
-_G.GS    = require "gamestate"
+_G.SCENE = require "gamestate"
 
 function love.load(args)
 	for _, v in pairs(args) do
@@ -18,12 +19,39 @@ function love.load(args)
 	anchor:set_overscan(0.1)
 	anchor:update()
 
-	_G.GS.registerEvents {
+	_G.SCENE.registerEvents {
 		"update", "keypressed",
 		"mousepressed", "mousereleased",
 		"touchpressed", "touchreleased"
 	}
-	_G.GS.switch(require "scenes.main-menu")
+
+	_G.DEFAULT_PREFERENCES = {
+		fullscreen    = false,
+		master_volume = 1.0,
+		bgm_volume    = 1.0,
+		sfx_volume    = 1.0,
+		language      = "en"
+	}
+
+	_G.PREFERENCES = {}
+
+	-- Load preferences
+	if love.filesystem.isFile("preferences.json") then
+		local json   = require "dkjson"
+		local file   = love.filesystem.read("preferences.json")
+		local decode = json.decode(file)
+		for k, v in pairs(decode) do
+			_G.PREFERENCES[k] = v
+		end
+	else
+		for k, v in pairs(_G.DEFAULT_PREFERENCES) do
+			_G.PREFERENCES[k] = v
+		end
+	end
+
+	love.window.setFullscreen(_G.PREFERENCES.fullscreen)
+
+	_G.SCENE.switch(require "scenes.main-menu")
 end
 
 function love.update(dt)
@@ -40,7 +68,7 @@ local function draw_overscan()
 end
 
 function love.draw()
-	local top = _G.GS.current()
+	local top = _G.SCENE.current()
 
 	if not top.draw then
 		fire.print("no draw function on the top screen.", 0, 0, "red")
