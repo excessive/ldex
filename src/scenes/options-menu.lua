@@ -276,7 +276,11 @@ function scene:draw()
 	-- Iterate through scrollers and draw them
 	for _, scroll in ipairs(scrollers) do
 		-- Draw highlight bar
-		love.graphics.setColor(255, 255, 255, 50)
+		if scroll == self.scroller then
+			love.graphics.setColor(255, 255, 255, 50)
+		else
+			love.graphics.setColor(255, 255, 255, 20)
+		end
 		love.graphics.rectangle("fill",
 			scroll.cursor_data.x,
 			scroll.cursor_data.y,
@@ -285,7 +289,7 @@ function scene:draw()
 		)
 
 		-- Draw items
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(255, 255, 255, scroll == self.scroller and 255 or 100)
 		for _, item in ipairs(scroll.data) do
 			if item.i18n then
 				local text, duration, audio, fallback = self.language:get(item.label)
