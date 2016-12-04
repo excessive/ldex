@@ -148,30 +148,40 @@ function scene:enter()
 			fixed        = true,
 			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
-			position     = { x = anchor:left() + topx(100), y = anchor:center_y() - topx(50) }
+			position_fn  = function()
+				return anchor:left() + topx(100), anchor:center_y() - topx(50)
+			end
 		}),
 
 		graphics = scroller(self.menus.graphics, {
 			fixed        = true,
 			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
-			position     = { x = anchor:center_x() - topx(250), y = anchor:center_y() - topx(50) }
+			position_fn  = function()
+				return anchor:left() + topx(300), anchor:center_y() - topx(50)
+			end
 		}),
 
 		audio = scroller(self.menus.audio, {
 			fixed        = true,
 			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
-			position     = { x = anchor:center_x() - topx(250), y = anchor:center_y() - topx(50) }
+			position_fn  = function()
+				return anchor:left() + topx(300), anchor:center_y() - topx(50)
+			end
 		}),
 
 		language = scroller(self.menus.language, {
 			fixed        = true,
 			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
-			position     = { x = anchor:center_x() - topx(250), y = anchor:center_y() - topx(50) }
+			position_fn  = function()
+				return anchor:left() + topx(300), anchor:center_y() - topx(50)
+			end
 		}),
 	}
+
+	self.active_scrollers = {}
 
 	self.scroller = self.scrollers[self.menu_selected]
 	self.logo     = love.graphics.newImage("assets/splash/logo-exmoe.png")
@@ -253,7 +263,16 @@ end
 function scene:update(dt)
 	self.scroller = self.scrollers[self.menu_selected]
 	self.scroller:hit(love.mouse.getPosition())
-	self.scroller:update(dt)
+
+	-- Get main menu scroller and other scroller if available
+	self.active_scrollers = {
+		self.scrollers.main,
+		self.scrollers[self.menu_selected] ~= self.scrollers.main and self.scrollers[self.menu_selected] or nil
+	}
+
+	for _, scroll in ipairs(self.active_scrollers) do
+		scroll:update(dt)
+	end
 end
 
 function scene:draw()
@@ -267,14 +286,8 @@ function scene:draw()
 	local font = get_font(topx(16))
 	love.graphics.setFont(font)
 
-	-- Get main menu scroller and other scroller if available
-	local scrollers = {
-		self.scrollers.main,
-		self.scrollers[self.menu_selected] ~= self.scrollers.main and self.scrollers[self.menu_selected] or nil
-	}
-
 	-- Iterate through scrollers and draw them
-	for _, scroll in ipairs(scrollers) do
+	for _, scroll in ipairs(self.active_scrollers) do
 		-- Draw highlight bar
 		if scroll == self.scroller then
 			love.graphics.setColor(255, 255, 255, 50)

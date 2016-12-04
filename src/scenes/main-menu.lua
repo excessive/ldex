@@ -35,7 +35,9 @@ function scene:enter()
 		fixed        = true,
 		transform_fn = transform,
 		size         = { w = topx(200), h = topx(40) },
-		position     = { x = anchor:left() + topx(100), y = anchor:center_y() - topx(50) }
+		position_fn  = function()
+			return anchor:left() + topx(100), anchor:center_y() - topx(50)
+		end
 	})
 
 	self.logo = love.graphics.newImage("assets/splash/logo-exmoe.png")

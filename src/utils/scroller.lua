@@ -11,13 +11,17 @@ local function default_transform(self, offset, count, index)
 	self.y = math.floor(offset * spacing)
 end
 
+local function default_position(_)
+	return 0, 0
+end
+
 local function new(items, options)
 	local t = {
 		fixed       = options.fixed        or false,
 		switch_time = options.switch_time  or 0.2,
 		transform   = options.transform_fn or default_transform,
 		size        = options.size         or false,
-		position    = options.position     or { x = 0, y = 0 },
+		position    = options.position_fn  or default_position,
 		cursor_data = {},
 		data        = {},
 		_timer = timer.new(),
@@ -99,6 +103,7 @@ end
 
 function scroller:update(dt)
 	self._timer:update(dt)
+	local x, y = self:position()
 	for i, v in ipairs(self._rb.items) do
 		self.data[i] = setmetatable({ x = 0, y = 0 }, { __index = v })
 		local ipos = i
@@ -106,12 +111,12 @@ function scroller:update(dt)
 			ipos = ipos - self._pos
 		end
 		self.transform(self.data[i], ipos, #self._rb.items, i)
-		self.data[i].x = self.data[i].x + self.position.x
-		self.data[i].y = self.data[i].y + self.position.y
+		self.data[i].x = self.data[i].x + x
+		self.data[i].y = self.data[i].y + y
 	end
 	self.transform(self.cursor_data, self.fixed and self._pos or 0, #self._rb.items, 1)
-	self.cursor_data.x = self.cursor_data.x + self.position.x
-	self.cursor_data.y = self.cursor_data.y + self.position.y
+	self.cursor_data.x = self.cursor_data.x + x
+	self.cursor_data.y = self.cursor_data.y + y
 
 	while #self.data > #self._rb.items do
 		table.remove(self.data)
