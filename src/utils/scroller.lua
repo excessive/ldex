@@ -72,10 +72,11 @@ end
 function scroller:reset()
 	self._rb:reset()
 
-	-- If you manage to land on a scroller that is bad mojo, go to the next one
+	-- If you manage to land on a skip that is bad mojo, go to the next one
 	local item = self:get()
-	if item.skip then
+	while item.skip do
 		self:next()
+		item = self:get()
 	end
 
 	-- throw in a big number to force an initial skip to not animate
