@@ -86,7 +86,7 @@ function scene:enter()
 		audio = {
 			{ label = "master-volume", i18n = true, skip = true },
 			{
-				label = "%d%%", volume = "master",
+				label = "%0.0f%%", volume = "master",
 				prev = function()
 					_G.PREFERENCES.master_volume = cpml.utils.clamp(_G.PREFERENCES.master_volume - 0.05, 0, 1)
 				end,
@@ -96,7 +96,7 @@ function scene:enter()
 			},
 			{ label = "bgm-volume", i18n = true, skip = true },
 			{
-				label = "%d%%", volume = "bgm",
+				label = "%0.0f%%", volume = "bgm",
 				prev = function()
 					_G.PREFERENCES.bgm_volume = cpml.utils.clamp(_G.PREFERENCES.bgm_volume - 0.05, 0, 1)
 				end,
@@ -106,7 +106,7 @@ function scene:enter()
 			},
 			{ label = "sfx-volume", i18n = true, skip = true },
 			{
-				label = "%d%%", volume = "sfx",
+				label = "%0.0f%%", volume = "sfx",
 				prev = function()
 					_G.PREFERENCES.sfx_volume = cpml.utils.clamp(_G.PREFERENCES.sfx_volume - 0.05, 0, 1)
 				end,
@@ -318,7 +318,7 @@ function scene:draw()
 		love.graphics.setColor(255, 255, 255, scroll == self.scroller and 255 or 100)
 		for _, item in ipairs(scroll.data) do
 			if item.i18n then
-				local text, duration, audio, fallback = self.language:get(item.label)
+				local text = self.language:get(item.label)
 				love.graphics.print(text, item.x + topx(10), item.y + topx(10))
 			elseif item.language then
 				local _, language = self.language:get_locale()
