@@ -15,12 +15,19 @@ local function default_position(_)
 	return 0, 0
 end
 
+local default_sounds = {
+	prev   = false,
+	next   = false,
+	select = false
+}
+
 local function new(items, options)
 	local t = {
 		fixed       = options.fixed        or false,
 		switch_time = options.switch_time  or 0.2,
-		transform   = options.transform_fn or default_transform,
 		size        = options.size         or false,
+		sounds      = options.sounds       or default_sounds,
+		transform   = options.transform_fn or default_transform,
 		position    = options.position_fn  or default_position,
 		cursor_data = {},
 		data        = {},
@@ -50,6 +57,10 @@ function scroller:get()
 end
 
 function scroller:prev(n)
+	if self.sounds.prev then
+		self.sounds.prev:stop()
+		self.sounds.prev:play()
+	end
 	for _ = 1, (n or 1) do self._rb:prev() end
 	local item = self:get()
 	if item.skip then
@@ -60,6 +71,11 @@ function scroller:prev(n)
 end
 
 function scroller:next(n)
+	if self.sounds.next then
+		self.sounds.next:stop()
+		self.sounds.next:play()
+	end
+
 	for _ = 1, (n or 1) do self._rb:next() end
 	local item = self:get()
 	if item.skip then

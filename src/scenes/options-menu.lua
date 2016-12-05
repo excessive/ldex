@@ -142,12 +142,22 @@ function scene:enter()
 		},
 	}
 
+	local sounds = {
+		prev   = love.audio.newSource("assets/sfx/bloop.wav"),
+		next   = love.audio.newSource("assets/sfx/bloop.wav"),
+		select = love.audio.newSource("assets/sfx/bloop.wav")
+	}
+	for _, v in pairs(sounds) do
+		v:setVolume(_G.PREFERENCES.sfx_volume)
+	end
+
 	-- List of menu scrollers
 	self.scrollers = {
 		main = scroller(self.menus.main, {
 			fixed        = true,
-			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
+			sounds       = sounds,
+			transform_fn = transform,
 			position_fn  = function()
 				return anchor:left() + topx(100), anchor:center_y() - topx(50)
 			end
@@ -155,8 +165,9 @@ function scene:enter()
 
 		graphics = scroller(self.menus.graphics, {
 			fixed        = true,
-			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
+			sounds       = sounds,
+			transform_fn = transform,
 			position_fn  = function()
 				return anchor:left() + topx(300), anchor:center_y() - topx(50)
 			end
@@ -164,8 +175,9 @@ function scene:enter()
 
 		audio = scroller(self.menus.audio, {
 			fixed        = true,
-			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
+			sounds       = sounds,
+			transform_fn = transform,
 			position_fn  = function()
 				return anchor:left() + topx(300), anchor:center_y() - topx(50)
 			end
@@ -173,8 +185,9 @@ function scene:enter()
 
 		language = scroller(self.menus.language, {
 			fixed        = true,
-			transform_fn = transform,
 			size         = { w = topx(200), h = topx(40) },
+			sounds       = sounds,
+			transform_fn = transform,
 			position_fn  = function()
 				return anchor:left() + topx(300), anchor:center_y() - topx(50)
 			end

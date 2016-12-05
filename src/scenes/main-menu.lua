@@ -33,12 +33,21 @@ function scene:enter()
 
 	self.scroller = scroller(items, {
 		fixed        = true,
-		transform_fn = transform,
 		size         = { w = topx(200), h = topx(40) },
+		sounds       = {
+			prev   = love.audio.newSource("assets/sfx/bloop.wav"),
+			next   = love.audio.newSource("assets/sfx/bloop.wav"),
+			select = love.audio.newSource("assets/sfx/bloop.wav")
+		},
+		transform_fn = transform,
 		position_fn  = function()
 			return anchor:left() + topx(100), anchor:center_y() - topx(50)
 		end
 	})
+
+	for _, v in pairs(self.scroller.sounds) do
+		v:setVolume(_G.PREFERENCES.sfx_volume)
+	end
 
 	self.logo = love.graphics.newImage("assets/splash/logo-exmoe.png")
 end
