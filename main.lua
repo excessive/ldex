@@ -1,5 +1,8 @@
+-- we need to require these before fire.save_the_world(), to prevent crashes
+require "cpml"
+require "love3d".import(false)
+
 local anchor = require "anchor"
-local cpml   = require "cpml"
 local fire   = require "fire"
 fire.save_the_world()
 
