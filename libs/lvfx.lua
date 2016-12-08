@@ -208,6 +208,12 @@ function lvfx.submit(view, retain)
 	end
 end
 
+-- submit a dummy draw, so that clears and such will happen.
+function lvfx.touch(view)
+	-- TODO: count this in draw stats
+	lvfx.submit(view)
+end
+
 local fix_love10_colors = function(t) return t end
 if select(2, love.getVersion()) <= 10 then
 	fix_love10_colors = function(t)
@@ -222,7 +228,7 @@ function lvfx.frame(views)
 	end
 
 	local lg = love.graphics
-	for i, view in ipairs(views) do
+	for _, view in ipairs(views) do
 		assert(getmetatable(view) == lvfx_view_mt)
 		lg.setCanvas(view._canvas or nil)
 		-- skip views with no draws
