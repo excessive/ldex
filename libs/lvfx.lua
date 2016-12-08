@@ -38,13 +38,16 @@ function lvfx_view:setScissor(_x, _y, _w, _h)
 	}
 end
 
-function lvfx_view:setClear(_r, _g, _b, _a, _depth)
+function lvfx_view:setDepthClear(clear)
+	self._depth_clear = clear or false
+end
+
+function lvfx_view:setClear(_r, _g, _b, _a)
 	local r, g, b, a = _r, _g, _b, _a
 	if type(_r) == "table" and #_r >= 3 then
 		r, g, b, a = _r[1], _r[2], _r[3], _r[4]
 	end
 	self._clear = { r, g, b, a or 1.0 }
-	self._depth_clear = _depth or false
 end
 
 function lvfx_view:setDepthTest(test, write)
@@ -213,12 +216,18 @@ if select(2, love.getVersion()) <= 10 then
 end
 
 function lvfx.frame(views)
+	if l3d then
+		l3d.set_depth_write(true)
+		l3d.clear(false, true)
+	end
+
 	local lg = love.graphics
-	for _, view in ipairs(views) do
+	for i, view in ipairs(views) do
 		assert(getmetatable(view) == lvfx_view_mt)
 		lg.setCanvas(view._canvas or nil)
-		if view._clear then
-			lg.clear(fix_love10_colors(view._clear))
+		-- skip views with no draws
+		if #view._draws == 0 then
+			goto continue
 		end
 		if view._scissor then
 			local rect = view._scissor
@@ -226,9 +235,13 @@ function lvfx.frame(views)
 		else
 			lg.setScissor()
 		end
+		if view._clear then
+			lg.clear(fix_love10_colors(view._clear))
+		end
 		if l3d then
-			l3d.set_depth_test(view._depth_test and "less" or nil)
 			l3d.set_depth_write(view._depth_write)
+			l3d.set_depth_test(view._depth_test)
+			l3d.clear(false, view._depth_clear)
 		end
 		for _, draw in ipairs(view._draws) do
 			lg.push("all")
@@ -249,8 +262,13 @@ function lvfx.frame(views)
 			end
 			lg.pop()
 		end
+		::continue::
 		tclear(view._draws)
 	end
+	lg.setCanvas()
+	lg.setScissor()
+	l3d.set_depth_write()
+	l3d.set_depth_test()
 
 	-- clear hanging submit state, so next frame is clean
 	lvfx.submit(false)

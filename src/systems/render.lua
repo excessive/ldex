@@ -19,7 +19,8 @@ function render:onAddToWorld()
 		foreground  = lvfx.newView(),
 		transparent = lvfx.newView()
 	}
-	self.views.background:setClear(0, 0, 0, 1, true)
+	self.views.background:setClear(0, 0, 0, 1)
+	self.views.background:setDepthClear(true)
 	self.views.background:setDepthTest("less", false)
 	self.views.foreground:setDepthTest("less", true)
 	self.views.transparent:setDepthTest("less", false)
@@ -77,8 +78,14 @@ function render:update()
 	assert(self.camera, "A camera is required to draw the scene.")
 	self.camera:update(self.views.foreground:getDimensions())
 
+	local default_rot = cpml.quat(0, 0, 0, 1)
+	local default_scale = cpml.vec3(1, 1, 1)
 	for _, entity in ipairs(self.objects) do
 		local model = cpml.mat4()
+		model:translate(model, entity.position)
+		model:rotate(model, entity.orientation or default_rot)
+		model:scale(model, entity.scale or default_scale)
+
 		self.uniforms.proj:set(self.camera.projection:to_vec4s())
 		self.uniforms.view:set(self.camera.view:to_vec4s())
 		self.uniforms.model:set(model:to_vec4s())

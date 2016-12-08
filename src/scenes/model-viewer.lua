@@ -13,10 +13,11 @@ function mv:enter()
 	}
 	self.world:add(self.renderer)
 
-	self.world:addEntity {
+	self.cube = self.world:addEntity {
 		visible  = true,
 		mesh     = iqm.load("assets/models/debug/color-cube.iqm"),
-		position = cpml.vec3()
+		position = cpml.vec3(),
+		orientation = cpml.quat(0, 0, 0, 1)
 	}
 end
 
@@ -36,6 +37,7 @@ end
 
 function mv:update(dt)
 	self.world:update(dt)
+	self.cube.orientation = cpml.quat.rotate(dt, cpml.vec3.unit_z) * self.cube.orientation
 end
 
 function mv:draw()
