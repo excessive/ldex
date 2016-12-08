@@ -4,6 +4,17 @@ local lvfx_view_mt = {
 	__index = lvfx_view
 }
 
+local dprint = console and console.d or print
+
+local l3d
+do
+	local ok
+	ok, l3d = pcall(require, "love3d")
+	if not ok then
+		dprint("LOVE3D not found, 3D features will not work.")
+	end
+end
+
 local tclear = table.clear or function(t)
 	for k, _ in pairs(t) do
 		t[k] = nil
@@ -27,12 +38,30 @@ function lvfx_view:setScissor(_x, _y, _w, _h)
 	}
 end
 
-function lvfx_view:setClear(_r, _g, _b, _a)
+function lvfx_view:setClear(_r, _g, _b, _a, _depth)
 	local r, g, b, a = _r, _g, _b, _a
 	if type(_r) == "table" and #_r >= 3 then
 		r, g, b, a = _r[1], _r[2], _r[3], _r[4]
 	end
 	self._clear = { r, g, b, a or 1.0 }
+	self._depth_clear = _depth or false
+end
+
+function lvfx_view:setDepthTest(test, write)
+	self._depth_test  = test
+	self._depth_write = (write == nil) and true or write
+end
+
+function lvfx_view:getWidth()
+	return self._canvas and self._canvas:getWidth() or love.graphics.getWidth()
+end
+
+function lvfx_view:getHeight()
+	return self._canvas and self._canvas:getHeight() or love.graphics.getHeight()
+end
+
+function lvfx_view:getDimensions()
+	return self:getWidth(), self:getHeight()
 end
 
 function lvfx.newView()
@@ -40,6 +69,9 @@ function lvfx.newView()
 		_clear   = false,
 		_scissor = false,
 		_canvas  = false,
+		_depth_test  = false,
+		_depth_write = true,
+		_depth_clear = false,
 		_draws   = {}
 	}
 	return setmetatable(t, lvfx_view_mt)
@@ -79,10 +111,10 @@ function lvfx_uniform:set(...)
 	uniforms[self._name] = #uniforms
 end
 
-function lvfx.newUniform(name)
+function lvfx.newUniform(name, default)
 	local t = {
-		_name = name,
-		_data = false
+		_name = assert(name, "Uniform name is required"),
+		_data = default or false
 	}
 	return setmetatable(t, lvfx_uniform_mt)
 end
@@ -129,6 +161,18 @@ function lvfx.setDraw(mesh, params)
 	end
 end
 
+local lg_fns = {
+	circle    = love.graphics.circle,
+	draw      = love.graphics.draw,
+	rectangle = love.graphics.rectangle
+}
+
+for k, v in pairs(lg_fns) do
+	lvfx[k] = function(...)
+		lvfx.setDraw(v, {...})
+	end
+end
+
 function lvfx.submit(view, retain)
 	if view then
 		assert(getmetatable(view) == lvfx_view_mt)
@@ -169,24 +213,29 @@ if select(2, love.getVersion()) <= 10 then
 end
 
 function lvfx.frame(views)
+	local lg = love.graphics
 	for _, view in ipairs(views) do
 		assert(getmetatable(view) == lvfx_view_mt)
-		love.graphics.setCanvas(view._canvas or nil)
+		lg.setCanvas(view._canvas or nil)
 		if view._clear then
-			love.graphics.clear(fix_love10_colors(view._clear))
+			lg.clear(fix_love10_colors(view._clear))
 		end
 		if view._scissor then
 			local rect = view._scissor
-			love.graphics.setScissor(rect.x, rect.y, rect.w, rect.h)
+			lg.setScissor(rect.x, rect.y, rect.w, rect.h)
 		else
-			love.graphics.setScissor()
+			lg.setScissor()
+		end
+		if l3d then
+			l3d.set_depth_test(view._depth_test and "less" or nil)
+			l3d.set_depth_write(view._depth_write)
 		end
 		for _, draw in ipairs(view._draws) do
-			love.graphics.push("all")
+			lg.push("all")
 			if draw.color then
-				love.graphics.setColor(fix_love10_colors(draw.color))
+				lg.setColor(fix_love10_colors(draw.color))
 			end
-			love.graphics.setShader(draw.shader and draw.shader._handle or nil)
+			lg.setShader(draw.shader and draw.shader._handle or nil)
 			if draw.shader then
 				for _, uniform in ipairs(draw.uniforms) do
 					local shader = draw.shader._handle
@@ -196,9 +245,9 @@ function lvfx.frame(views)
 			if draw.fn then
 				draw.fn(unpack(draw.fn_params or {}))
 			elseif draw.mesh then
-				love.graphics.draw(draw.mesh, unpack(draw.mesh_params or {}))
+				lg.draw(draw.mesh, unpack(draw.mesh_params or {}))
 			end
-			love.graphics.pop()
+			lg.pop()
 		end
 		tclear(view._draws)
 	end
