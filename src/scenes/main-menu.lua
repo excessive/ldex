@@ -17,7 +17,9 @@ function scene:enter()
 	local items = {
 		{ label = "new-game" },
 		{ label = "play-online" },
-		{ label = "debug" },
+		{ label = "debug", action = function()
+			_G.SCENE.switch(require "scenes.model-viewer")
+		end },
 		{ label = "options", action = function()
 			_G.SCENE.switch(require "scenes.options-menu")
 		end },
