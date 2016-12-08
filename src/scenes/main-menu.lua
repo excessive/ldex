@@ -52,6 +52,7 @@ function scene:enter()
 	end
 
 	self.logo = love.graphics.newImage("assets/splash/logo-exmoe.png")
+	love.graphics.setBackgroundColor(0, 0, 0)
 end
 
 function scene:go()
@@ -74,6 +75,11 @@ function scene:keypressed(k)
 	end
 	if k == "return" then
 		self:go()
+		return
+	end
+	if k == "escape" then
+		_G.SCENE.switch(require "scenes.splash")
+		return
 	end
 end
 
