@@ -11,6 +11,7 @@ do
 	local ok
 	ok, l3d = pcall(require, "love3d")
 	if not ok then
+		l3d = nil
 		dprint("LOVE3D not found, 3D features will not work.")
 	end
 end
@@ -274,8 +275,10 @@ function lvfx.frame(views)
 	end
 	lg.setCanvas()
 	lg.setScissor()
-	l3d.set_depth_write()
-	l3d.set_depth_test()
+	if l3d then
+		l3d.set_depth_write()
+		l3d.set_depth_test()
+	end
 
 	-- clear hanging submit state, so next frame is clean
 	lvfx.submit(false)
