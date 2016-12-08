@@ -2,27 +2,46 @@ local camera = require "camera"
 local cpml   = require "cpml"
 local iqm    = require "iqm"
 local tiny   = require "tiny"
+local anim9  = require "anim9"
 local scene  = {}
 
 function scene:enter()
 	self.world           = tiny.world()
 	self.renderer        = require "systems.render"
 	self.renderer.camera = camera {
-		fov      = 45,
-		position = cpml.vec3(0, -5, 0)
+		fov      = 50,
+		position = cpml.vec3(0, -5, 2),
+		target   = cpml.vec3(0, 0, 1.5)
 	}
 	self.world:add(self.renderer)
+	self.world:add(require "systems.animation")
 
 	self.cube = self.world:addEntity {
 		visible     = true,
 		mesh        = iqm.load("assets/models/debug/color-cube.iqm"),
-		position    = cpml.vec3(),
-		orientation = cpml.quat(0, 0, 0, 1)
+		position    = cpml.vec3(0, 0, 1.0),
+		orientation = cpml.quat(0, 0, 0, 1),
+		scale       = cpml.vec3(0.5, 0.5, 0.5)
 	}
+
+	if love.filesystem.isFile("assets/models/mc2.iqm") then
+		self.mc = self.world:addEntity {
+			visible     = true,
+			mesh        = iqm.load("assets/models/mc2.iqm"),
+			animation   = iqm.load_anims("assets/models/mc2.iqm"),
+			position    = cpml.vec3(1.5, 0, 0),
+		}
+		self.mc.animation = anim9(self.mc.animation)
+		self.mc.animation:play("idle")
+	end
 end
 
 function scene:leave()
-	self.world:remove(self.renderer)
+	self.cube = nil
+	self.mc = nil
+
+	self.world:clearEntities()
+	self.world:clearSystems()
 	self.renderer = nil
 
 	self.world:refresh()

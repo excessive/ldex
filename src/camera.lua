@@ -17,6 +17,8 @@ local function new(options)
 		position = options.position or cpml.vec3(0, 0, 0),
 		orientation = options.orientation or cpml.quat(0, 0, 0, 1),
 
+		target = options.target or false,
+
 		view = cpml.mat4(),
 		projection = cpml.mat4()
 	}
@@ -27,7 +29,8 @@ end
 
 function camera:update(w, h)
 	local aspect = math.max(w/h, h/w)
-	self.view:look_at(self.view, self.position, self.position + self.direction, cpml.vec3.unit_z)
+	local target = self.target and self.target or (self.position + self.direction)
+	self.view:look_at(self.view, self.position, target, cpml.vec3.unit_z)
 	self.projection = cpml.mat4.from_perspective(self.fov, aspect, self.near, self.far)
 end
 

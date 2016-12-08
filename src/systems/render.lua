@@ -28,7 +28,9 @@ function render:onAddToWorld()
 	self.uniforms = {
 		proj  = lvfx.newUniform("u_projection"),
 		view  = lvfx.newUniform("u_view"),
-		model = lvfx.newUniform("u_model")
+		model = lvfx.newUniform("u_model"),
+
+		pose  = lvfx.newUniform("u_pose"),
 	}
 
 	self.shaders = {
@@ -37,6 +39,33 @@ function render:onAddToWorld()
 				uniform mat4 u_model, u_view, u_projection;
 				vec4 position(mat4 _, vec4 vertex) {
 					return u_projection * u_view * u_model * vertex;
+				}
+			#endif
+			#ifdef PIXEL
+				vec4 effect(vec4 color, Image tex, vec2 uv, vec2 sc) {
+					return Texel(tex, uv) * color;
+				}
+			#endif
+		]],
+		skinned = lvfx.newShader [[
+			#ifdef VERTEX
+				attribute vec4 VertexWeight;
+				attribute vec4 VertexBone; // used as ints!
+
+				uniform mat4 u_model, u_view, u_projection;
+				uniform mat4 u_pose[80];
+
+				mat4 getDeformMatrix() {
+					// *255 because byte data is normalized against our will.
+					return
+							u_pose[int(VertexBone.x*255.0)] * VertexWeight.x +
+							u_pose[int(VertexBone.y*255.0)] * VertexWeight.y +
+							u_pose[int(VertexBone.z*255.0)] * VertexWeight.z +
+							u_pose[int(VertexBone.w*255.0)] * VertexWeight.w;
+				}
+
+				vec4 position(mat4 _, vec4 vertex) {
+					return u_projection * u_view * u_model * getDeformMatrix() * vertex;
 				}
 			#endif
 			#ifdef PIXEL
@@ -89,7 +118,15 @@ function render:update()
 		self.uniforms.proj:set(self.camera.projection:to_vec4s())
 		self.uniforms.view:set(self.camera.view:to_vec4s())
 		self.uniforms.model:set(model:to_vec4s())
-		lvfx.setShader(self.shaders.normal)
+
+		local anim = entity.animation
+		if anim and anim.current_pose then
+			self.uniforms.pose:set(unpack(anim.current_pose))
+			lvfx.setShader(self.shaders.skinned)
+		else
+			lvfx.setShader(self.shaders.normal)
+		end
+
 		lvfx.draw(entity.mesh.mesh)
 		lvfx.submit(self.views.foreground)
 	end
