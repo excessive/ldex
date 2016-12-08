@@ -56,7 +56,7 @@ function render:onAddToWorld()
 				attribute vec4 VertexBone; // used as ints!
 
 				uniform mat4 u_model, u_view, u_projection;
-				uniform mat4 u_pose[80];
+				uniform mat4 u_pose[100];
 
 				mat4 getDeformMatrix() {
 					// *255 because byte data is normalized against our will.

@@ -23,7 +23,7 @@ local function new(options)
 		view = cpml.mat4(),
 		projection = cpml.mat4(),
 
-		mouse_sensitivity = 1/15,
+		mouse_sensitivity = 1/10,
 		pitch_limit_up = 0.9,
 		pitch_limit_down = 0.9
 	}
@@ -35,8 +35,8 @@ end
 function camera:rotate_xy(mx, my)
 	local sensitivity = self.mouse_sensitivity
 	local mouse_direction = {
-		x = math.rad(mx * sensitivity),
-		y = math.rad(my * sensitivity)
+		x = math.rad(-mx * sensitivity),
+		y = math.rad(-my * sensitivity)
 	}
 
 	-- get the axis to rotate around the x-axis.
