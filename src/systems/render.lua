@@ -55,22 +55,26 @@ function render:onRemoveFromWorld()
 end
 
 function render:onAdd(e)
-	if e.camera and e.active then
-		self.camera = e
-	end
 	if e.mesh then
 		table.insert(self.objects, e)
+		self.objects[e] = #self.objects
 	end
 end
 
 function render:onRemove(e)
-	if self.camera == e then
-		self.camera = nil
+	if e.mesh then
+		-- all entities are guaranteed unique by tiny
+		for i, entity in ipairs(self.objects) do
+			if entity == e then
+				table.remove(self.objects, i)
+				break
+			end
+		end
 	end
 end
 
 function render:update()
-	assert(self.camera, "A camera entity is required to draw the scene.")
+	assert(self.camera, "A camera is required to draw the scene.")
 	self.camera:update(self.views.foreground:getDimensions())
 
 	for _, entity in ipairs(self.objects) do
