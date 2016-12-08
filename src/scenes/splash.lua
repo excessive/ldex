@@ -58,6 +58,7 @@ function gs:leave()
 	self.overlay    = nil
 	self.bgm        = nil
 	self.next_scene = nil
+	self.switch     = nil
 end
 
 function gs:update(dt)

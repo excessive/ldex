@@ -244,6 +244,15 @@ function scene:keypressed(k)
 	end
 	if k == "return" then
 		self:scroller_action()
+		return
+	end
+	if k == "escape" then
+		if self.menu_selected == "main" then
+			_G.SCENE.switch(require "scenes.main-menu")
+		else
+			self.menu_selected = "main"
+		end
+		return
 	end
 end
 
