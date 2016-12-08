@@ -269,8 +269,8 @@ function lvfx.frame(views)
 			end
 			lg.pop()
 		end
-		::continue::
 		tclear(view._draws)
+		::continue::
 	end
 	lg.setCanvas()
 	lg.setScissor()
