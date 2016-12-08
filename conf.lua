@@ -42,8 +42,8 @@ local flags = {
 	height         = 720,
 	fullscreen     = false,
 	fullscreentype = "desktop",
-	msaa           = 4,
-	vsync          = true,
+	msaa           = 2,
+	vsync          = false,
 	resizable      = false,
 	highdpi        = true
 }

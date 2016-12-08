@@ -24,8 +24,8 @@ function love.load(args)
 
 	_G.SCENE.registerEvents {
 		"update", "keypressed",
-		"mousepressed", "mousereleased",
-		"touchpressed", "touchreleased"
+		"mousepressed", "mousereleased", "mousemoved",
+		"touchpressed", "touchreleased", "touchmoved"
 	}
 
 	_G.DEFAULT_PREFERENCES = {

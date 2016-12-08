@@ -34,6 +34,8 @@ function scene:enter()
 		self.mc.animation = anim9(self.mc.animation)
 		self.mc.animation:play("idle")
 	end
+
+	love.mouse.setRelativeMode(true)
 end
 
 function scene:leave()
@@ -46,6 +48,13 @@ function scene:leave()
 
 	self.world:refresh()
 	self.world = nil
+
+	love.mouse.setRelativeMode(false)
+end
+
+function scene:mousemoved(_, _, mx, my)
+	self.renderer.camera.target = false
+	self.renderer.camera:rotate_xy(mx, my)
 end
 
 function scene:keypressed(k)

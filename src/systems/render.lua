@@ -31,6 +31,9 @@ function render:onAddToWorld()
 		model = lvfx.newUniform("u_model"),
 
 		pose  = lvfx.newUniform("u_pose"),
+
+		clips = lvfx.newUniform("u_clips"),
+		fog_color = lvfx.newUniform("u_fog_color")
 	}
 
 	self.shaders = {
@@ -107,6 +110,11 @@ function render:update()
 	assert(self.camera, "A camera is required to draw the scene.")
 	self.camera:update(self.views.foreground:getDimensions())
 
+	self.uniforms.proj:set(self.camera.projection:to_vec4s())
+	self.uniforms.view:set(self.camera.view:to_vec4s())
+	self.uniforms.clips:set({self.camera.near, self.camera.far})
+	self.uniforms.fog_color:set(self.views.background._clear)
+
 	local default_rot = cpml.quat(0, 0, 0, 1)
 	local default_scale = cpml.vec3(1, 1, 1)
 	for _, entity in ipairs(self.objects) do
@@ -115,8 +123,6 @@ function render:update()
 		model:rotate(model, entity.orientation or default_rot)
 		model:scale(model, entity.scale or default_scale)
 
-		self.uniforms.proj:set(self.camera.projection:to_vec4s())
-		self.uniforms.view:set(self.camera.view:to_vec4s())
 		self.uniforms.model:set(model:to_vec4s())
 
 		local anim = entity.animation

@@ -95,7 +95,7 @@ function l3d.import(use_monkeypatching)
 	sdl.SDL_GL_GetAttribute(sdl.SDL_GL_DEPTH_SIZE, out)
 
 	-- assert(out[0] > 8, "We didn't get a depth buffer, bad things will happen.")
-	print(string.format("Depth bits: %d", out[0]))
+	-- print(string.format("Depth bits: %d", out[0]))
 
 	if use_monkeypatching then
 		l3d.patch()
@@ -425,7 +425,7 @@ function l3d.new_shadow_map(w, h)
 
 	if gl.CheckFramebufferStatus(GL.FRAMEBUFFER) ~= GL.FRAMEBUFFER_COMPLETE then
 		l3d.bind_shadow_map()
-		print "FUCK"
+		-- print "FUCK"
 		return false
 	end
 
