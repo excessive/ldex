@@ -228,6 +228,7 @@ function lvfx.frame(views)
 	end
 
 	local lg = love.graphics
+	lg.setColor(fix_love10_colors { 1, 1, 1, 1 })
 	for _, view in ipairs(views) do
 		assert(getmetatable(view) == lvfx_view_mt)
 		lg.setCanvas(view._canvas or nil)
