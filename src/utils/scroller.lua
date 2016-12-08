@@ -35,6 +35,7 @@ local function new(items, options)
 		_rb    = ringbuffer(items),
 		_pos   = 1,
 		_tween = false,
+		_last_hit = false
 	}
 	t = setmetatable(t, scroller_mt)
 	t:reset()
@@ -101,8 +102,15 @@ end
 
 function scroller:hit(x, y, click)
 	if not self.size or (not self.fixed and not click) then
+		self._last_hit = false
 		return false
 	end
+	if self._last_hit and self._last_hit[1] == x and self._last_hit[2] == y then
+		if not click then
+			return false
+		end
+	end
+	self._last_hit = { x, y }
 	local p = cpml.vec3(x, y, 0)
 	for i, item in ipairs(self._rb.items) do
 		local b = {
