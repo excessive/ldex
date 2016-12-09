@@ -268,7 +268,7 @@ function l3d.new_shader_raw(gl_version, vc, pc)
 #line 0
 %s]]
 		local vs = arg1 and string.format(fmt, "#version " .. versions[gl_version], "VERTEX", vc) or nil
-		local ps = arg2 and string.format(fmt, versions[gl_version], "PIXEL", pc) or nil
+		local ps = arg2 and string.format(fmt, "#version " .. versions[gl_version], "PIXEL", pc) or nil
 		return vs, ps
 	end
 	local orig = love.graphics._shaderCodeToGLSL

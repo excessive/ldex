@@ -15,6 +15,7 @@ function scene:enter()
 	}
 	self.world:add(self.renderer)
 	self.world:add(require "systems.animation")
+	self.world:add(require "systems.audio")
 
 	self.cube = self.world:addEntity {
 		visible     = true,

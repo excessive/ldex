@@ -1,6 +1,7 @@
 local lvfx = require "lvfx"
 local tiny = require "tiny"
 local cpml = require "cpml"
+local l3d  = require "love3d"
 
 local render = tiny.system {
 	filter = tiny.requireAny(
@@ -15,10 +16,16 @@ function render:onAddToWorld()
 	setmetatable(self.objects, { __mode = 'v'})
 
 	self.views = {
+		shadow      = lvfx.newView(),
 		background  = lvfx.newView(),
 		foreground  = lvfx.newView(),
 		transparent = lvfx.newView()
 	}
+	self.shadow_rt = l3d.new_shadow_map(1024, 1024)
+
+	self.views.shadow:setCanvas(self.shadow_rt)
+	self.views.shadow:setDepthClear(true)
+	self.views.shadow:setDepthTest("less", true)
 	self.views.background:setClear(0, 0, 0, 1)
 	self.views.background:setDepthClear(true)
 	self.views.background:setDepthTest("less", false)
@@ -37,46 +44,10 @@ function render:onAddToWorld()
 	}
 
 	self.shaders = {
-		normal = lvfx.newShader [[
-			#ifdef VERTEX
-				uniform mat4 u_model, u_view, u_projection;
-				vec4 position(mat4 _, vec4 vertex) {
-					return u_projection * u_view * u_model * vertex;
-				}
-			#endif
-			#ifdef PIXEL
-				vec4 effect(vec4 color, Image tex, vec2 uv, vec2 sc) {
-					return Texel(tex, uv) * color;
-				}
-			#endif
-		]],
-		skinned = lvfx.newShader [[
-			#ifdef VERTEX
-				attribute vec4 VertexWeight;
-				attribute vec4 VertexBone; // used as ints!
-
-				uniform mat4 u_model, u_view, u_projection;
-				uniform mat4 u_pose[100];
-
-				mat4 getDeformMatrix() {
-					// *255 because byte data is normalized against our will.
-					return
-							u_pose[int(VertexBone.x*255.0)] * VertexWeight.x +
-							u_pose[int(VertexBone.y*255.0)] * VertexWeight.y +
-							u_pose[int(VertexBone.z*255.0)] * VertexWeight.z +
-							u_pose[int(VertexBone.w*255.0)] * VertexWeight.w;
-				}
-
-				vec4 position(mat4 _, vec4 vertex) {
-					return u_projection * u_view * u_model * getDeformMatrix() * vertex;
-				}
-			#endif
-			#ifdef PIXEL
-				vec4 effect(vec4 color, Image tex, vec2 uv, vec2 sc) {
-					return Texel(tex, uv) * color;
-				}
-			#endif
-		]]
+		normal  = lvfx.newShader("assets/shaders/basic-normal.vs.glsl", "assets/shaders/basic.fs.glsl"),
+		skinned = lvfx.newShader("assets/shaders/basic-skinned.vs.glsl", "assets/shaders/basic.fs.glsl"),
+		shadow_normal  = lvfx.newShader("assets/shaders/shadow-normal.vs.glsl", "assets/shaders/shadow.fs.glsl", true),
+		shadow_skinned = lvfx.newShader("assets/shaders/shadow-skinned.vs.glsl", "assets/shaders/shadow.fs.glsl", true)
 	}
 end
 
@@ -106,6 +77,22 @@ function render:onRemove(e)
 	end
 end
 
+local default_pos   = cpml.vec3(0, 0, 0)
+local default_rot   = cpml.quat(0, 0, 0, 1)
+local default_scale = cpml.vec3(1, 1, 1)
+
+local function draw_model(model, textures)
+	for _, buffer in ipairs(model) do
+		if textures then
+			model.mesh:setTexture(load.texture(textures[buffer.material]))
+		else
+			model.mesh:setTexture()
+		end
+		model.mesh:setDrawRange(buffer.first, buffer.last)
+		love.graphics.draw(model.mesh)
+	end
+end
+
 function render:update()
 	assert(self.camera, "A camera is required to draw the scene.")
 	self.camera:update(self.views.foreground:getDimensions())
@@ -115,11 +102,9 @@ function render:update()
 	self.uniforms.clips:set({self.camera.near, self.camera.far})
 	self.uniforms.fog_color:set(self.views.background._clear)
 
-	local default_rot = cpml.quat(0, 0, 0, 1)
-	local default_scale = cpml.vec3(1, 1, 1)
 	for _, entity in ipairs(self.objects) do
 		local model = cpml.mat4()
-		model:translate(model, entity.position)
+		model:translate(model, entity.position or default_pos)
 		model:rotate(model, entity.orientation or default_rot)
 		model:scale(model, entity.scale or default_scale)
 
@@ -133,13 +118,21 @@ function render:update()
 			lvfx.setShader(self.shaders.normal)
 		end
 
-		lvfx.draw(entity.mesh.mesh)
-		lvfx.submit(self.views.foreground)
+		lvfx.setDraw(draw_model, { entity.mesh, entity.textures })
+		lvfx.submit(self.views.foreground, true)
+
+		if entity.no_shadow then
+			lvfx.submit(false)
+		else
+			lvfx.setShader(anim and self.shaders.shadow_skinned or self.shaders.shadow_normal)
+			lvfx.submit(self.views.shadow)
+		end
 	end
 end
 
 function render:draw()
 	lvfx.frame {
+		self.views.shadow,
 		self.views.background,
 		self.views.foreground,
 		self.views.transparent
