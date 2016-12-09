@@ -35,7 +35,7 @@ local function new(items, options)
 		_rb    = ringbuffer(items),
 		_pos   = 1,
 		_tween = false,
-		_last_hit = false
+		_last_hit = { love.mouse.getPosition() }
 	}
 	t = setmetatable(t, scroller_mt)
 	t:reset()
