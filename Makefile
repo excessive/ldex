@@ -1,7 +1,7 @@
 .PHONY: run
 run:
 	zip -9 \
-		-x ".vscode*" -x "*Makefile" -x "*.atom-build.json" \
+		-x ".vscode*" -x ".swp" -x "*.atom-build.json" -x "*Makefile" \
 		-x ".git*" -x "*.git" -x "*.gitignore" \
 		-x "*.yml" -x "*.editorconfig" \
 		-x "*_spec.lua" -x "*.rockspec" \
