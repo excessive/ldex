@@ -3,7 +3,7 @@ local cpml = require "cpml"
 local anim = {
 	_LICENSE     = "anim9 is distributed under the terms of the MIT license. See LICENSE.md.",
 	_URL         = "https://github.com/excessive/anim9",
-	_VERSION     = "0.0.2",
+	_VERSION     = "0.0.3",
 	_DESCRIPTION = "Animation library for LÖVE3D.",
 }
 anim.__index = anim
@@ -19,6 +19,7 @@ end
 local function calc_pose(skeleton, base, p1, p2, position)
 	local animation_buffer = {}
 	local transform = {}
+	local bone_lookup = {}
 	for i, joint in ipairs(skeleton) do
 		local t = cpml.vec3():lerp(p1[i].translate, p2[i].translate, position)
 		local r = cpml.quat():slerp(p1[i].rotate, p2[i].rotate, position)
@@ -36,9 +37,11 @@ local function calc_pose(skeleton, base, p1, p2, position)
 			render       = base[i] * m
 		end
 
+		bone_lookup[joint.name] = transform[i]
 		table.insert(animation_buffer, render:to_vec4s())
 	end
-	return animation_buffer
+	table.insert(animation_buffer, animation_buffer[#animation_buffer])
+	return animation_buffer, bone_lookup
 end
 
 local function new(data, anims)
@@ -149,7 +152,7 @@ function anim:step(reverse)
 		local frame = _anim.frames[math.floor(position)+1]
 
 		-- Update the final pose
-		self.current_pose = calc_pose(
+		self.current_pose, self.current_matrices = calc_pose(
 			self.skeleton, self.inverse_base,
 			frame, frame, 0
 		)
@@ -162,7 +165,7 @@ function anim:update(dt)
 		assert(_anim, string.format("Invalid animation: %s", self.current_animation))
 		local length = _anim.length / _anim.framerate
 		self.current_time = self.current_time + dt
-		if self.current_time > length then
+		if self.current_time >= length then
 			if type(self.current_callback) == "function" then
 				self.current_callback(self)
 			end
@@ -181,7 +184,7 @@ function anim:update(dt)
 		f2 = f2 % (_anim.length)
 
 		-- Update the final pose
-		self.current_pose = calc_pose(
+		self.current_pose, self.current_matrices = calc_pose(
 			self.skeleton, self.inverse_base,
 			_anim.frames[f1+1], _anim.frames[f2+1], position
 		)

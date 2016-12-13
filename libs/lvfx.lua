@@ -56,6 +56,10 @@ function lvfx_view:setDepthTest(test, write)
 	self._depth_write = (write == nil) and true or write
 end
 
+function lvfx_view:setCulling(face)
+	self._culling = face or false
+end
+
 function lvfx_view:getWidth()
 	return self._canvas and self._canvas:getWidth() or love.graphics.getWidth()
 end
@@ -76,6 +80,7 @@ function lvfx.newView()
 		_depth_test  = false,
 		_depth_write = true,
 		_depth_clear = false,
+		_culling     = false,
 		_draws   = {}
 	}
 	return setmetatable(t, lvfx_view_mt)
@@ -121,10 +126,11 @@ function lvfx_uniform:set(...)
 	uniforms[self._name] = #uniforms
 end
 
-function lvfx.newUniform(name, default)
+function lvfx.newUniform(name, int)
 	local t = {
 		_name = assert(name, "Uniform name is required"),
-		_data = default or false
+		_data = false,
+		_int  = int or false
 	}
 	return setmetatable(t, lvfx_uniform_mt)
 end
@@ -258,6 +264,7 @@ function lvfx.frame(views)
 			lg.clear(fix_love10_colors(view._clear))
 		end
 		if l3d then
+			l3d.set_culling(view._culling)
 			l3d.set_depth_write(view._depth_write)
 			l3d.set_depth_test(view._depth_test)
 			l3d.clear(false, view._depth_clear)
@@ -277,7 +284,13 @@ function lvfx.frame(views)
 			if draw.shader then
 				for _, uniform in ipairs(draw.uniforms) do
 					local shader = draw.shader._handle
-					shader:send(uniform._name, unpack(uniform._data))
+					if type(uniform._data[1]) == "table" and uniform._data[1].shadow_map then
+						l3d.bind_shadow_texture(uniform._data[1], draw.shader, uniform._name)
+					elseif uniform._int then
+						shader:sendInt(uniform._name, unpack(uniform._data))
+					else
+						shader:send(uniform._name, unpack(uniform._data))
+					end
 				end
 			end
 			if draw.fn then
@@ -297,6 +310,7 @@ function lvfx.frame(views)
 	lg.setCanvas()
 	lg.setScissor()
 	if l3d then
+		l3d.set_culling()
 		l3d.set_depth_write()
 		l3d.set_depth_test()
 	end
