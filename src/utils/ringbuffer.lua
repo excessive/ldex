@@ -4,7 +4,7 @@ local ringbuffer_mt = {}
 
 local function new(_items)
 	local t = {
-		items   = _items,
+		items   = _items or {},
 		current = 1
 	}
 	return setmetatable(t, ringbuffer_mt)
