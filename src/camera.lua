@@ -1,6 +1,4 @@
-local tiny   = require "tiny"
 local cpml   = require "cpml"
-
 local camera = {}
 
 local camera_mt = {
@@ -9,23 +7,26 @@ local camera_mt = {
 
 local function new(options)
 	local t = {
-		fov = options.fov or 45,
-		near = options.near or 0.01,   -- 1cm
-		far  = options.far  or 1000.0, -- 1km
+		fov      = options.fov      or 45,
+		near     = options.near     or 0.1,   -- 10cm
+		far      = options.far      or 150.0, -- 150m
 		exposure = options.exposure or 1.0,
 
-		position = options.position or cpml.vec3(0, 0, 0),
+		position    = options.position    or cpml.vec3(0, 0, 0),
 		orientation = options.orientation or cpml.quat(0, 0, 0, 1),
 
 		target = options.target or false,
-		up = cpml.vec3.unit_z,
+		up     = cpml.vec3.unit_z,
 
-		view = cpml.mat4(),
+		orbit_offset = options.orbit_offset or cpml.vec3(0, 0, 0),
+		offset       = options.offset or cpml.vec3(0, 0, 0),
+
+		view       = cpml.mat4(),
 		projection = cpml.mat4(),
 
-		mouse_sensitivity = 1/10,
-		pitch_limit_up = 0.9,
-		pitch_limit_down = 0.9
+		mouse_sensitivity = 0.1,
+		pitch_limit_up    = 0.3,
+		pitch_limit_down  = 0.9
 	}
 	t.direction = t.orientation * cpml.vec3.unit_y
 
@@ -33,7 +34,7 @@ local function new(options)
 end
 
 function camera:rotate_xy(mx, my)
-	local sensitivity = self.mouse_sensitivity
+	local sensitivity     = self.mouse_sensitivity
 	local mouse_direction = {
 		x = math.rad(-mx * sensitivity),
 		y = math.rad(-my * sensitivity)
@@ -50,7 +51,7 @@ function camera:rotate_xy(mx, my)
 	-- up/down rotation is applied after any other rotation (so that other rotations are not affected by it),
 	-- hence we post-multiply it.
 	local new_orientation = self.orientation * cpml.quat.rotate(mouse_direction.y, cpml.vec3.unit_x)
-	local new_pitch = (new_orientation * cpml.vec3.unit_y):dot(self.up)
+	local new_pitch       = (new_orientation * cpml.vec3.unit_y):dot(self.up)
 
 	-- Don't rotate up/down more than self.pitch_limit.
 	-- We need to limit pitch, but the only reliable way we're going to get away with this is if we
@@ -69,9 +70,15 @@ function camera:rotate_xy(mx, my)
 end
 
 function camera:update(w, h)
-	local aspect = math.max(w/h, h/w)
+	local aspect = math.max(w / h, h / w)
 	local target = self.target and self.target or (self.position + self.direction)
-	self.view:look_at(self.view, self.position, target, cpml.vec3.unit_z)
+	local look = cpml.mat4()
+	look:look_at(look, self.position, target, cpml.vec3.unit_z)
+	self.view:identity(self.view)
+		:translate(self.view, self.orbit_offset)
+		:mul(look, self.view)
+		:translate(self.view, self.offset)
+
 	self.projection = cpml.mat4.from_perspective(self.fov, aspect, self.near, self.far)
 end
 
