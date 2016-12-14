@@ -10,7 +10,7 @@ WORKING_DIRECTORY=$(shell pwd)
 
 LOVE_TARGET=${PROJECT_SHORTNAME}.love
 
-DEPS_DATA=dev/build_data
+DEPS_DATA=resources/build_data
 DEPS_DOWNLOAD_TARGET=https://bitbucket.org/rude/love/downloads/
 DEPS_WIN32_TARGET=love-${LOVE_VERSION}\-win64.zip
 DEPS_WIN64_TARGET=love-${LOVE_VERSION}\-win32.zip
@@ -43,22 +43,20 @@ love: clean
 	#Writing ${GIT_TARGET}
 	echo "git_hash,git_count = '${GIT_HASH}',${GIT_COUNT}" > ${GIT_TARGET}
 	#Make love file
-	cd ${SRC_DIR};\
 	zip -9 \
 		-x ".vscode*" -x ".swp" -x "*.atom-build.json" -x "*Makefile" \
 		-x ".git*" -x "*.git" -x "*.gitignore" \
 		-x "*.yml" -x "*.editorconfig" \
 		-x "*_spec.lua" -x "*.rockspec" \
-		-x "resources" -x "*.love" \
-		-r ldex.love .
-	cd ..
+		-x "resources/*" -x "*.love" \
+		-r ${LOVE_TARGET} .
 
 .PHONY: run
 run: love
 	exec ${LOVE} --fused ${LOVE_TARGET}
 
 .PHONY: debug
-debug: love
+debug:
 	exec ${LOVE} --fused ${SRC_DIR} --debug --hud
 
 .PHONY: cleandeps

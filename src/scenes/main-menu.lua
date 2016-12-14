@@ -16,12 +16,14 @@ function scene:enter()
 
 	local items = {
 		{ label = "new-game" },
-		{ label = "play-online" },
 		{ label = "debug", action = function()
-			_G.SCENE.switch(require "scenes.model-viewer")
+			_G.SCENE.switch(require "scenes.debug-menu")
 		end },
 		{ label = "options", action = function()
 			_G.SCENE.switch(require "scenes.options-menu")
+		end },
+		{ label = "credits", action = function()
+			_G.SCENE.switch(require "scenes.credits")
 		end },
 		{ label = "exit", action = function()
 			love.event.quit()

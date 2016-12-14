@@ -4,6 +4,10 @@ return {
 	audio_dir = "assets/audio/en",
 	quotes    = { "\"", "\"" },
 	strings   = {
+		-- Menus
+		["return-menu"]   = { text = "Return to Main Menu" },
+		["back"]          = { text = "Back" },
+
 		-- Main Menu
 		["new-game"]      = { text = "New Game" },
 		["new-game-plus"] = { text = "New Game +" },
@@ -11,6 +15,7 @@ return {
 		["play-online"]   = { text = "Play Online" },
 		["debug"]         = { text = "Debug" },
 		["options"]       = { text = "Options" },
+		["credits"]       = { text = "Credits" },
 		["exit"]          = { text = "Exit" },
 
 		-- Options Menu
@@ -19,8 +24,6 @@ return {
 		["language"]      = { text = "Language" },
 		["controls"]      = { text = "Controls" },
 		["reset-default"] = { text = "Reset to Default" },
-		["return-menu"]   = { text = "Return to Main Menu" },
-		["back"]          = { text = "Back" },
 
 		-- Graphics Settings
 		["toggle-fullscreen"] = { text = "Toggle Fullscreen" },
