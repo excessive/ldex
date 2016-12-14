@@ -7,15 +7,16 @@ local scene  = {}
 
 function scene:enter()
 	self.world           = tiny.world()
-	self.renderer        = require "systems.render"
+	self.renderer        = require("systems.render")()
 	self.renderer.camera = camera {
 		fov      = 50,
 		position = cpml.vec3(0, -5, 2),
 		target   = cpml.vec3(0, 0, 1.5)
 	}
+	self.world:add(require("systems.animation")())
+	self.world:add(require("systems.audio")())
+	self.world:add(require("systems.matrix")())
 	self.world:add(self.renderer)
-	self.world:add(require "systems.animation")
-	self.world:add(require "systems.audio")
 
 	self.cube = self.world:addEntity {
 		visible     = true,
@@ -65,9 +66,9 @@ function scene:keypressed(k)
 end
 
 function scene:update(dt)
-	self.world:update(dt)
 	self.cube.orientation = cpml.quat.rotate(dt,     cpml.vec3.unit_z) * self.cube.orientation
 	self.cube.orientation = cpml.quat.rotate(dt*0.5, cpml.vec3.unit_x) * self.cube.orientation
+	self.world:update(dt)
 end
 
 function scene:draw()
