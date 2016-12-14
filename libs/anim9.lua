@@ -21,7 +21,9 @@ local function add_poses(skeleton, p1, p2, weight)
 	for i = 1, #skeleton do
 		local t = cpml.vec3():lerp(p1[i].translate, p1[i].translate + p2[i].translate, weight)
 		local r = cpml.quat():slerp(p1[i].rotate, p1[i].rotate * p2[i].rotate, weight)
-		local s = cpml.vec3():lerp(p1[i].scale, p1[i].scale + p2[i].scale, weight)
+		-- for scale, we only want to add the difference
+		-- TODO: do the other values need to work this way?
+		local s = cpml.vec3():lerp(p1[i].scale, p1[i].scale + (p2[i].scale - p1[i].scale), weight)
 		r:normalize(r)
 		new_pose[i] = {
 			translate = t,
