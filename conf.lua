@@ -2,16 +2,16 @@
 -- TODO: Read a preferences file for conf stuff?
 _G.FLAGS = {
 	game_version  = "LD3x-0.0.0",
-	debug_mode    = not love.filesystem.isFused(),
+	debug_mode    = false,
+	show_perfhud  = false,
 	show_overscan = false,
 	headless      = false
 }
-_G.FLAGS.show_perfhud = _G.FLAGS.debug_mode
 
 local use = {
 	highdpi_hack       = true,
 	hot_reloader       = true,
-	fps_in_title       = _G.FLAGS.debug_mode,
+	fps_in_title       = true,
 	handle_screenshots = true,
 	event_poll         = true,
 	love_draw          = true,
@@ -43,7 +43,7 @@ local flags = {
 	fullscreen     = false,
 	fullscreentype = "desktop",
 	msaa           = 4,
-	vsync          = false,
+	vsync          = true,
 	resizable      = false,
 	highdpi        = true
 }
@@ -53,7 +53,7 @@ if use.highdpi_hack and love.system.getOS() == "Linux" and not _G.FLAGS.headless
 
 	local lume      = require "lume"
 	local f         = io.popen("gsettings get org.gnome.desktop.interface scaling-factor")
-	local _scale    = lume.split(f:read(), " ")
+	local _scale    = lume.split(f:read() or "it's 1", " ")
 	local dpi_scale = _scale[2] and tonumber(_scale[2]) or 1.0
 
 	if dpi_scale >= 0.5 then
