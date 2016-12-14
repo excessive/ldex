@@ -16,16 +16,45 @@ local function calc_bone_matrix(pos, rot, scale)
 		:scale(out, scale)
 end
 
-local function calc_pose(skeleton, base, p1, p2, position)
+local function add_poses(skeleton, p1, p2, weight)
+	local new_pose = {}
+	for i = 1, #skeleton do
+		local t = cpml.vec3():lerp(p1[i].translate, p1[i].translate + p2[i].translate, weight)
+		local r = cpml.quat():slerp(p1[i].rotate, p1[i].rotate * p2[i].rotate, weight)
+		local s = cpml.vec3():lerp(p1[i].scale, p1[i].scale + p2[i].scale, weight)
+		r:normalize(r)
+		new_pose[i] = {
+			translate = t,
+			rotate    = r,
+			scale     = s
+		}
+	end
+	return new_pose
+end
+
+local function mix_poses(skeleton, p1, p2, weight)
+	local new_pose = {}
+	for i = 1, #skeleton do
+		local t = cpml.vec3():lerp(p1[i].translate, p2[i].translate, weight)
+		local r = cpml.quat():slerp(p1[i].rotate, p2[i].rotate, weight)
+		local s = cpml.vec3():lerp(p1[i].scale, p2[i].scale, weight)
+		r:normalize(r)
+		new_pose[i] = {
+			translate = t,
+			rotate    = r,
+			scale     = s
+		}
+	end
+	return new_pose
+end
+
+local function update_matrices(skeleton, base, pose)
 	local animation_buffer = {}
 	local transform = {}
 	local bone_lookup = {}
+
 	for i, joint in ipairs(skeleton) do
-		local t = cpml.vec3():lerp(p1[i].translate, p2[i].translate, position)
-		local r = cpml.quat():slerp(p1[i].rotate, p2[i].rotate, position)
-		local s = cpml.vec3():lerp(p1[i].scale, p2[i].scale, position)
-		r:normalize(r)
-		local m = calc_bone_matrix(t, r, s)
+		local m = calc_bone_matrix(pose[i].translate, pose[i].rotate, pose[i].scale)
 		local render
 
 		if joint.parent > 0 then
@@ -152,9 +181,9 @@ function anim:step(reverse)
 		local frame = _anim.frames[math.floor(position)+1]
 
 		-- Update the final pose
-		self.current_pose, self.current_matrices = calc_pose(
-			self.skeleton, self.inverse_base,
-			frame, frame, 0
+		local pose = mix_poses(self.skeleton, frame, frame, 0)
+		self.current_pose, self.current_matrices = update_matrices(
+			self.skeleton, self.inverse_base, pose
 		)
 	end
 end
@@ -184,9 +213,14 @@ function anim:update(dt)
 		f2 = f2 % (_anim.length)
 
 		-- Update the final pose
-		self.current_pose, self.current_matrices = calc_pose(
-			self.skeleton, self.inverse_base,
-			_anim.frames[f1+1], _anim.frames[f2+1], position
+		local pose = mix_poses(
+			self.skeleton,
+			_anim.frames[f1+1],
+			_anim.frames[f2+1],
+			position
+		)
+		self.current_pose, self.current_matrices = update_matrices(
+			self.skeleton, self.inverse_base, pose
 		)
 
 		self.current_frame = f1
