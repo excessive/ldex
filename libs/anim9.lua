@@ -3,7 +3,7 @@ local cpml = require "cpml"
 local anim = {
 	_LICENSE     = "anim9 is distributed under the terms of the MIT license. See LICENSE.md.",
 	_URL         = "https://github.com/excessive/anim9",
-	_VERSION     = "0.0.3",
+	_VERSION     = "0.1.0",
 	_DESCRIPTION = "Animation library for LÖVE3D.",
 }
 anim.__index = anim
@@ -16,12 +16,26 @@ local function calc_bone_matrix(pos, rot, scale)
 		:scale(out, scale)
 end
 
+local function bind_pose(skeleton)
+	local pose = {}
+	for i = 1, #skeleton do
+		pose[i] = {
+			translate = skeleton[i].position,
+			rotate    = skeleton[i].rotation,
+			scale     = skeleton[i].scale
+		}
+	end
+	return pose
+end
+
 local function add_poses(skeleton, p1, p2)
 	local new_pose = {}
 	for i = 1, #skeleton do
+		local inv = p1[i].rotate:clone()
+		inv:inverse(inv)
 		new_pose[i] = {
-			translate = p1[i].translate + p2[i].translate,
-			rotate    = p1[i].rotate * p2[i].rotate,
+			translate = p1[i].translate + (p2[i].translate - p1[i].translate),
+			rotate    = (p2[i].rotate * inv) * p1[i].rotate,
 			scale     = p1[i].scale + (p2[i].scale - p1[i].scale)
 		}
 	end
@@ -74,7 +88,8 @@ local function new(data, anims)
 		active       = {},
 		animations   = {},
 		skeleton     = data.skeleton,
-		inverse_base = {}
+		inverse_base = {},
+		bind_pose    = bind_pose(data.skeleton)
 	}
 
 	-- Calculate inverse base pose.
@@ -115,12 +130,13 @@ function anim:add_animation(animation, frame_data)
 	self.animations[new_anim.name] = new_anim
 end
 
-local function new_animation(name, weight, callback)
+local function new_animation(name, weight, rate, callback)
 	return {
 		name     = assert(name),
 		frame    = 1,
 		time     = 0,
 		marker   = 0,
+		rate     = rate or 1,
 		weight   = weight or 1,
 		callback = callback or false,
 		playing  = true
@@ -134,10 +150,10 @@ function anim:reset(name)
 	self.active[name].frame  = 1
 end
 
-function anim:play(name, weight, callback)
+function anim:play(name, weight, rate, callback)
 	if self.active[name] then return end
 	assert(self.animations[name], string.format("Invalid animation: '%s'", name))
-	self.active[name] = new_animation(name, weight, callback)
+	self.active[name] = new_animation(name, weight, rate, callback)
 	table.insert(self.active, self.active[name])
 end
 
@@ -202,11 +218,11 @@ function anim:update(dt)
 		return
 	end
 
-	local pose
+	local pose = self.bind_pose
 	for _, meta in ipairs(self.active) do
 		local _anim = self.animations[meta.name]
 		local length = _anim.length / _anim.framerate
-		meta.time = meta.time + dt
+		meta.time = meta.time + dt * meta.rate
 		if meta.time >= length then
 			if type(meta.callback) == "function" then
 				meta.callback(self)
@@ -232,11 +248,8 @@ function anim:update(dt)
 			_anim.frames[f2+1],
 			position
 		)
-		if pose then
-			pose = mix_poses(self.skeleton, pose, interp, meta.weight)
-		else
-			pose = interp
-		end
+		local mix = mix_poses(self.skeleton, pose, interp, meta.weight)
+		pose = add_poses(self.skeleton, pose, mix)
 	end
 
 	self.current_pose, self.current_matrices = update_matrices(
