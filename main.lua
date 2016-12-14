@@ -30,6 +30,7 @@ function love.load(args)
 
 	_G.DEFAULT_PREFERENCES = {
 		fullscreen    = false,
+		vsync         = true,
 		master_volume = 1.0,
 		bgm_volume    = 1.0,
 		sfx_volume    = 1.0,
@@ -43,6 +44,10 @@ function love.load(args)
 		local json   = require "dkjson"
 		local file   = love.filesystem.read("preferences.json")
 		local decode = json.decode(file)
+		-- copy default prefs first, in case some have been added.
+		for k, v in pairs(_G.DEFAULT_PREFERENCES) do
+			_G.PREFERENCES[k] = v
+		end
 		for k, v in pairs(decode) do
 			_G.PREFERENCES[k] = v
 		end
@@ -52,7 +57,10 @@ function love.load(args)
 		end
 	end
 
-	love.window.setFullscreen(_G.PREFERENCES.fullscreen)
+	local w, h, mode = love.window.getMode()
+	mode.vsync       = _G.PREFERENCES.vsync
+	mode.fullscreen  = _G.PREFERENCES.fullscreen
+	love.window.setMode(w, h, mode)
 
 	_G.SCENE.switch(require "scenes.main-menu")
 end

@@ -11,6 +11,13 @@ local get_font   = memoize(love.graphics.newFont)
 local topx       = love.window.toPixels
 local scene      = {}
 
+local function apply_graphics_options(prefs)
+	local w, h, mode = love.window.getMode()
+	mode.vsync       = prefs.vsync
+	mode.fullscreen  = prefs.fullscreen
+	love.window.setMode(w, h, mode)
+end
+
 function scene:enter()
 	local transform = function(self, offset, count, index)
 		self.x = 0
@@ -48,6 +55,11 @@ function scene:enter()
 		end
 	end
 
+	local prefs = {}
+	for k, v in pairs(_G.PREFERENCES) do
+		prefs[k] = v
+	end
+
 	-- List of menus and their options
 	self.menus = {
 		main = {
@@ -73,11 +85,20 @@ function scene:enter()
 
 		graphics = {
 			{ label = "toggle-fullscreen", i18n = true, action = function()
-				_G.PREFERENCES.fullscreen = not _G.PREFERENCES.fullscreen
-				love.window.setFullscreen(_G.PREFERENCES.fullscreen)
+				prefs.fullscreen = not prefs.fullscreen
+			end },
+			{ label = "toggle-vsync", i18n = true, action = function()
+				prefs.vsync = not prefs.vsync
 			end },
 			{ label = "", skip = true },
+			{ label = "apply", i18n = true, action = function()
+				apply_graphics_options(prefs)
+				for k, v in pairs(prefs) do
+					_G.PREFERENCES[k] = v
+				end
+			end },
 			{ label = "back", i18n = true, action = function()
+				apply_graphics_options(_G.PREFERENCES)
 				self.scroller:reset()
 				self.menu_selected = "main"
 			end }
