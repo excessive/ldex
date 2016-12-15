@@ -13,6 +13,7 @@ local scene      = {}
 
 local function apply_graphics_options(prefs)
 	local w, h, mode = love.window.getMode()
+	mode.msaa        = prefs.msaa and 4 or 1
 	mode.vsync       = prefs.vsync
 	mode.fullscreen  = prefs.fullscreen
 	love.window.setMode(w, h, mode)
@@ -89,6 +90,9 @@ function scene:enter()
 			end },
 			{ label = "toggle-vsync", i18n = true, action = function()
 				prefs.vsync = not prefs.vsync
+			end },
+			{ label = "toggle-msaa", i18n = true, action = function()
+				prefs.msaa = not prefs.msaa
 			end },
 			{ label = "", skip = true },
 			{ label = "apply", i18n = true, action = function()

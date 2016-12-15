@@ -1,5 +1,6 @@
 -- we need to require these before fire.save_the_world(), to prevent crashes
 require "cpml"
+require "iqm"
 require "love3d".import(false)
 
 local anchor = require "anchor"
@@ -31,6 +32,7 @@ function love.load(args)
 	_G.DEFAULT_PREFERENCES = {
 		fullscreen    = false,
 		vsync         = true,
+		msaa          = true,
 		master_volume = 1.0,
 		bgm_volume    = 1.0,
 		sfx_volume    = 1.0,
@@ -58,6 +60,7 @@ function love.load(args)
 	end
 
 	local w, h, mode = love.window.getMode()
+	mode.msaa        = _G.PREFERENCES.msaa and 4 or 1
 	mode.vsync       = _G.PREFERENCES.vsync
 	mode.fullscreen  = _G.PREFERENCES.fullscreen
 	love.window.setMode(w, h, mode)
