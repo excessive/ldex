@@ -34,7 +34,7 @@ function scene:enter()
 			position    = cpml.vec3(1.5, 0, 0),
 		}
 		self.mc.animation = anim9(self.mc.animation)
-		self.mc.animation:play("idle")
+		self.mc.animation:play("idle", 0.5)
 	end
 
 	love.mouse.setRelativeMode(true)
