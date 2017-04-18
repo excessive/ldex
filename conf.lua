@@ -15,11 +15,6 @@ local use = {
 	handle_screenshots = true,
 	event_poll         = true,
 	love_draw          = true,
-	console            = true,
-	console_font       = {
-		path = "assets/fonts/Inconsolata-Regular.ttf",
-		size = 16
-	},
 	log_header         = "Please report this on GitHub at https://github.com/excessive/ludum-dare-37 or\nsend a DM on Twitter to @LandonManning, @shakesoda, or @josefnpat."
 }
 
@@ -211,45 +206,6 @@ perfhud.spacing   = math.floor(perfhud.bar_width * 1.2)
 perfhud.width     = perfhud.spacing * perfhud.max_samples - (perfhud.spacing - perfhud.bar_width)
 
 local l3d_loaded     = false
-local console_loaded = false
-
-local colors = {
-	white = { bg = { 255, 255, 255, 200 }, fg = { 0, 0, 0, 255 }  },
-	black = { bg = { 0, 0, 0, 200 },   fg = { 255, 255, 255, 255 }  },
-	green = { bg = { 0, 150, 0, 200 }, fg = { 255, 255, 255, 255 }  },
-	red   = { bg = { 150, 0, 0, 200 }, fg = { 255, 255, 255, 255 }  },
-	blue  = { bg = { 0, 0, 150, 200 }, fg = { 255, 255, 255, 255 }  }
-}
-colors.default = colors.black
-
-local prints = {}
-local font = false
-
-function fire.get_font()
-	return font
-end
-
-function fire.set_font(f)
-	font = f
-end
-
-function fire.clear_prints()
-	while #prints > 0 do
-		table.remove(prints)
-	end
-end
-
-function fire.print(str, x, y, color)
-	color = colors[color] or colors.default
-	assert(x, "fire.print requires an x position")
-	assert(y, "fire.print requires a y position")
-	table.insert(prints, {
-		x = x,
-		y = y,
-		color = color,
-		str = tostring(str)
-	})
-end
 
 local binds = {}
 
@@ -305,50 +261,6 @@ function love.run()
 	if use.love3d and not l3d_loaded then
 		l3d_loaded = true
 		require "love3d".import(true, false)
-	end
-
-	if use.console and not console_loaded then
-		console_loaded = true
-		_G.console = require "console"
-		local console = _G.console
-		local params = use.console_font and use.console_font or { path = false, size = 14 }
-		local have_font = params.path and love.filesystem.isFile(params.path) or false
-		local font
-		if have_font then
-			font = love.graphics.newFont(params.path, math.floor(love.window.toPixels(params.size)))
-		else
-			font = love.graphics.newFont(math.floor(love.window.toPixels(params.size)))
-		end
-		console.load(font)
-		console.update(0)
-	end
-
-	local fp = "assets/fonts/Inconsolata-Regular.ttf"
-	if love.filesystem.isFile(fp) then
-		fire.set_font(love.graphics.newFont(fp, math.floor(love.window.toPixels(16))))
-	else
-		fire.set_font(love.graphics.newFont(math.floor(love.window.toPixels(16))))
-	end
-
-	if console then
-		if use.hot_reloader then
-			console.clearCommand("restart")
-			console.defineCommand(
-				"restart",
-				"Reload game files and restart the game.",
-				function()
-					reset = true
-				end
-			)
-		end
-		console.clearCommand("perfhud")
-		console.defineCommand(
-			"perfhud",
-			"Toggle framerate overlay.",
-			function()
-				_G.FLAGS.show_perfhud = not _G.FLAGS.show_perfhud
-			end
-		)
 	end
 
 	if use.hot_reloader then
@@ -416,13 +328,8 @@ function love.run()
 							return
 						end
 					end
-					if not console
-						or not console[name]
-						or (not (type(console[name]) == "function" and console[name](a,b,c,d,e,f)))
-					then
-						if name ~= "keypressed" or (name == "keypressed" and not fire.trigger(a,b,c,d,e,f)) then
-							love.handlers[name](a,b,c,d,e,f)
-						end
+					if name ~= "keypressed" or (name == "keypressed" and not fire.trigger(a,b,c,d,e,f)) then
+						love.handlers[name](a,b,c,d,e,f)
 					end
 				end
 			end
@@ -462,14 +369,10 @@ function love.run()
 			-- love.graphics.discard()
 			love.graphics.clear(love.graphics.getBackgroundColor())
 
-			-- make sure the console is always updated
-			if console then console.update(dt) end
 			 -- will pass 0 if love.timer is disabled
 			if love.update then love.update(dt, skip_time) end
 
 			if use.love_draw and love.draw then love.draw() end
-
-			if console then console.draw() end
 
 			table.insert(perfhud.data, skip_time or dt)
 			while #perfhud.data > perfhud.max_samples do
@@ -496,26 +399,7 @@ function love.run()
 			end
 
 			love.graphics.origin()
-			if _G.FLAGS.debug_mode then
-				local f = fire.get_font()
-				local w = f:getWidth(" ")
-				local h = f:getHeight()
-				for _, p in ipairs(prints) do
-					local x = p.x * w
-					local y = p.y * h
-					love.graphics.setFont(f)
-					love.graphics.setColor(p.color.bg)
-					love.graphics.rectangle("fill", x, y, f:getWidth(p.str), h)
-					love.graphics.setColor(p.color.fg)
-					love.graphics.print(p.str, x, y)
-				end
-				love.graphics.setColor(255, 255, 255, 255)
-			end
-
 			love.graphics.present()
-
-			-- clear debug prints for this frame
-			fire.clear_prints()
 
 			-- Run a fast GC cycle so that it happens at predictable times.
 			-- This prevents GC work from building up and causing hitches.
