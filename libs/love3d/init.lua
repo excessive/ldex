@@ -11,7 +11,7 @@ local use_gles = false
 local l3d = {
 	_LICENSE = "Love3D is distributed under the terms of the MIT license. See LICENSE.md.",
 	_URL = "https://github.com/excessive/love3d",
-	_VERSION = "0.0.1",
+	_VERSION = "0.0.2",
 	_DESCRIPTION = "A 3D extension for LÖVE."
 }
 
@@ -53,7 +53,7 @@ end
 --
 -- This must be called before anything else.
 -- @param use_monkeypatching patch the LOVE API with LOVE3D functions
-function l3d.import(use_monkeypatching)
+function l3d.import()
 	local already_loaded = pcall(function() return ffi.C.SDL_GL_DEPTH_SIZE end)
 	if not already_loaded then
 		ffi.cdef([[
@@ -93,13 +93,6 @@ function l3d.import(use_monkeypatching)
 
 	local out = ffi.new("int[?]", 1)
 	sdl.SDL_GL_GetAttribute(sdl.SDL_GL_DEPTH_SIZE, out)
-
-	-- assert(out[0] > 8, "We didn't get a depth buffer, bad things will happen.")
-	-- print(string.format("Depth bits: %d", out[0]))
-
-	if use_monkeypatching then
-		l3d.patch()
-	end
 end
 
 --- Clear color/depth buffers.
@@ -145,6 +138,9 @@ end
 function l3d.set_depth_write(mask)
 	if mask then
 		assert(type(mask) == "boolean", "set_depth_write expects one parameter of type 'boolean'")
+	end
+	if mask == nil then
+		mask = true
 	end
 	gl.DepthMask(mask and 1 or 0)
 end
@@ -325,6 +321,7 @@ end
 function l3d.new_canvas(width, height, format, msaa, gen_depth)
 	-- TODO: Test this to make sure things are properly freed.
 	if use_gles then
+		error()
 		return
 	end
 	local w, h = width or love.graphics.getWidth(), height or love.graphics.getHeight()
@@ -425,7 +422,6 @@ function l3d.new_shadow_map(w, h)
 
 	if gl.CheckFramebufferStatus(GL.FRAMEBUFFER) ~= GL.FRAMEBUFFER_COMPLETE then
 		l3d.bind_shadow_map()
-		-- print "FUCK"
 		return false
 	end
 
@@ -438,66 +434,6 @@ function l3d.new_shadow_map(w, h)
 		width        = w,
 		height       = h
 	}
-end
-
---[[
--- depth-only canvas!
-local function l3d.new_depth_canvas(w, h)
-	local fbo = ffi.new("unsigned int[1]", 1)
-	gl.GenFramebuffers(1, fbo)
-	gl.BindFramebuffer(GL.FRAMEBUFFER, fbo[0])
-
-	local depth = ffi.new("unsigned int[1]", 1)
-	gl.GenTextures(1, depth)
-	gl.BindTexture(GL.TEXTURE_2D, depth[0])
-	gl.TexImage2D(GL.TEXTURE_2D, 0, GL.DEPTH_COMPONENT24, w, h, 0, GL.DEPTH_COMPONENT, GL.FLOAT, 0)
-	gl.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST)
-	gl.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST)
-	gl.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE)
-	gl.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE)
-
-	gl.FramebufferTexture(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, depth, 0)
-
-	gl.DrawBuffer(GL.NONE) -- No color buffer is drawn to.
-
-	if gl.CheckFramebufferStatus(GL.FRAMEBUFFER) ~= GL.FRAMEBUFFER_COMPLETE then
-		return false
-	end
-
-	return fbo
-end
---]]
-
-function l3d.patch()
-	--- Get a handle to the library.
-	love.graphics.getLove3D     = function() return l3d end
-
-	--- See l3d.clear.
-	love.graphics.clearDepth    = function() l3d.clear() end
-
-	--- See l3d.set_depth_test.
-	-- @function love.graphics.setDepthTest
-	love.graphics.setDepthTest  = l3d.set_depth_test
-
-	--- See l3d.set_depth_write.
-	-- @function love.graphics.setDepthWrite
-	love.graphics.setDepthWrite = l3d.set_depth_write
-
-	--- See l3d.set_culling.
-	-- @function love.graphics.setCulling
-	love.graphics.setCulling    = l3d.set_culling
-
-	--- See l3d.set_front_face.
-	-- @function love.graphics.setFrontFace
-	love.graphics.setFrontFace  = l3d.set_front_face
-
-	--- See l3d.reset.
-	-- @function love.graphics.reset
-	love.graphics.reset         = combine(l3d.reset, love.graphics.reset)
-
-	--- See l3d.new_canvas.
-	-- @function love.graphics.newCanvas
-	love.graphics.newCanvas     = l3d.new_canvas
 end
 
 return l3d

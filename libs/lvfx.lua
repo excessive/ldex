@@ -22,8 +22,9 @@ local tclear = table.clear or function(t)
 	end
 end
 
-function lvfx_view:setCanvas(_canvas)
+function lvfx_view:setCanvas(_canvas, _mipgen)
 	self._canvas = _canvas or false
+	self._mipgen = _mipgen
 end
 
 function lvfx_view:setScissor(_x, _y, _w, _h)
@@ -77,6 +78,7 @@ function lvfx.newView()
 		_clear   = false,
 		_scissor = false,
 		_canvas  = false,
+		_mipgen  = false,
 		_depth_test  = false,
 		_depth_write = true,
 		_depth_clear = false,
@@ -244,12 +246,7 @@ function lvfx.frame(views)
 	lg.setColor(fix_love10_colors { 1, 1, 1, 1 })
 	for _, view in ipairs(views) do
 		assert(getmetatable(view) == lvfx_view_mt)
-		local use_shadow_map = l3d and view._canvas and view._canvas.shadow_map
-		if use_shadow_map then
-			l3d.bind_shadow_map(view._canvas)
-		else
-			lg.setCanvas(view._canvas or nil)
-		end
+		lg.setCanvas(view._canvas or nil)
 		-- skip views with no draws
 		if #view._draws == 0 then
 			goto continue
@@ -270,7 +267,7 @@ function lvfx.frame(views)
 			l3d.clear(false, view._depth_clear)
 			-- alpha blending and depth buffers don't play nice.
 			if view._depth_write and view._depth_test then
-				love.graphics.setBlendMode("alpha", "premultiplied")
+				love.graphics.setBlendMode("replace")
 			else
 				love.graphics.setBlendMode("alpha")
 			end
@@ -284,9 +281,7 @@ function lvfx.frame(views)
 			if draw.shader then
 				for _, uniform in ipairs(draw.uniforms) do
 					local shader = draw.shader._handle
-					if type(uniform._data[1]) == "table" and uniform._data[1].shadow_map then
-						l3d.bind_shadow_texture(uniform._data[1], draw.shader, uniform._name)
-					elseif uniform._int then
+					if uniform._int then
 						shader:sendInt(uniform._name, unpack(uniform._data))
 					else
 						shader:send(uniform._name, unpack(uniform._data))
@@ -298,9 +293,7 @@ function lvfx.frame(views)
 			elseif draw.mesh then
 				lg.draw(draw.mesh, unpack(draw.mesh_params or {}))
 			end
-			if use_shadow_map then
-				l3d.bind_shadow_map()
-			end
+	
 			lg.pop()
 		end
 		tclear(view._draws)

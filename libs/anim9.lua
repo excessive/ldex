@@ -3,7 +3,7 @@ local cpml = require "cpml"
 local anim = {
 	_LICENSE     = "anim9 is distributed under the terms of the MIT license. See LICENSE.md.",
 	_URL         = "https://github.com/excessive/anim9",
-	_VERSION     = "0.1.1",
+	_VERSION     = "0.1.2",
 	_DESCRIPTION = "Animation library for LÖVE3D.",
 }
 anim.__index = anim
@@ -32,7 +32,7 @@ local function add_poses(skeleton, p1, p2)
 	local new_pose = {}
 	for i = 1, #skeleton do
 		local inv = p1[i].rotate:clone()
-		inv:inverse(inv)
+		inv = inv:inverse()
 		new_pose[i] = {
 			translate = p1[i].translate + (p2[i].translate - p1[i].translate),
 			rotate    = (p2[i].rotate * inv) * p1[i].rotate,
@@ -45,12 +45,12 @@ end
 local function mix_poses(skeleton, p1, p2, weight)
 	local new_pose = {}
 	for i = 1, #skeleton do
-		local r = cpml.quat():slerp(p1[i].rotate, p2[i].rotate, weight)
-		r:normalize(r)
+		local r = cpml.quat.slerp(p1[i].rotate, p2[i].rotate, weight)
+		r = r:normalize()
 		new_pose[i] = {
-			translate = cpml.vec3():lerp(p1[i].translate, p2[i].translate, weight),
+			translate = cpml.vec3.lerp(p1[i].translate, p2[i].translate, weight),
 			rotate    = r,
-			scale     = cpml.vec3():lerp(p1[i].scale, p2[i].scale, weight)
+			scale     = cpml.vec3.lerp(p1[i].scale, p2[i].scale, weight)
 		}
 	end
 	return new_pose
@@ -139,7 +139,8 @@ local function new_animation(name, weight, rate, callback)
 		rate     = rate or 1,
 		weight   = weight or 1,
 		callback = callback or false,
-		playing  = true
+		playing  = true,
+		blend    = 1.0
 	}
 end
 
@@ -155,6 +156,25 @@ function anim:reset(name)
 	self.active[name].time   = 0
 	self.active[name].marker = 0
 	self.active[name].frame  = 1
+end
+
+function anim:transition(name, time, callback)
+	if self.transitioning and self.transitioning.name == name then
+		return
+	end
+
+	if self.active[name] then
+		return
+	end
+
+	self.transitioning = {
+		name = name,
+		length = time,
+		time = 0
+	}
+
+	self:play(name, 1.0, 1.0, callback)
+	self.active[name].blend = 0.0
 end
 
 function anim:play(name, weight, rate, callback)
@@ -238,6 +258,31 @@ function anim:update(dt)
 		return
 	end
 
+	if self.transitioning then
+		local t = self.transitioning
+		t.time = t.time + dt
+
+		local progress = math.min(t.time / t.length, 1)
+
+		for _, meta in ipairs(self.active) do
+			meta.blend = cpml.utils.lerp(0, 1, progress)
+
+			-- invert the target, so it crossfades.
+			if meta.name ~= t.name then
+				meta.blend = 1.0-meta.blend
+			end
+		end
+
+		if progress == 1 then
+			for _, v in ipairs(self.active) do
+				if v.name ~= t.name then
+					self:stop(v.name)
+				end
+			end
+			self.transitioning = nil
+		end
+	end
+
 	local pose = self.bind_pose
 	for _, meta in ipairs(self.active) do
 		local over = false
@@ -274,7 +319,8 @@ function anim:update(dt)
 			_anim.frames[f2+1],
 			position
 		)
-		local mix = mix_poses(self.skeleton, pose, interp, meta.weight)
+
+		local mix = mix_poses(self.skeleton, pose, interp, meta.weight * meta.blend)
 		pose = add_poses(self.skeleton, pose, mix)
 
 		if over then

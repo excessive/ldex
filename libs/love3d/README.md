@@ -13,41 +13,8 @@ You can load models using [IQM](https://github.com/excessive/iqm).
 Online documentation can be found [here](http://excessive.github.io/love3d/) or you can generate them yourself using `ldoc -c doc/config.ld -o index .`
 
 ## Usage
-```lua
-require("love3d").import(true)
 
-function love.load()
-  -- we do not yet include a model loader or a shader, sorry!
-  some_model = up_to_you()
-  some_shader = up_to_you()
-end
+Examples can be found here: https://github.com/excessive/love3d-demos
 
-function love.draw()
-  -- setup...
-  love.graphics.setDepthTest("less")
-  love.graphics.setShader(some_shader)
-
-  -- ...move into place...
-  love.graphics.translate(0, 10, 0)
-  love.graphics.scale(5, 5, 5)
-
-  -- ...and draw!
-  love.graphics.draw(some_model)
-
-  -- reset
-  love.graphics.setShader()
-  love.graphics.setDepthTest()
-
-  -- now it's safe to draw 2D again.
-  love.graphics.print(string.format("FPS: %0.2f (%0.4f)", love.timer.getFPS(), love.timer.getAverageDelta()))
-end
-```
-
-## Todo
-* Include a useful default shader
-* Implement love.graphics.shear
-* Add debug functionality:
-  * Bounding boxes
-  * Rays
-  * OVR performance/latency hud
-* Add real support for OVR layers.
+## TODO
+* Convince slime to add depth support to love.
