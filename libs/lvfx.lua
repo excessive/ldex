@@ -4,15 +4,13 @@ local lvfx_view_mt = {
 	__index = lvfx_view
 }
 
-local dprint = console and console.d or print
-
 local l3d
 do
 	local ok
 	ok, l3d = pcall(require, "love3d")
 	if not ok then
 		l3d = nil
-		dprint("LOVE3D not found, 3D features will not work.")
+		print("LOVE3D not found, 3D features will not work.")
 	end
 end
 
@@ -139,7 +137,7 @@ end
 
 -- quick shallow copy for submissions
 local draw_keys = {}
-for k, v in pairs(lvfx_draw) do
+for k in pairs(lvfx_draw) do
 	table.insert(draw_keys, k)
 end
 local function copy_draw(t)
@@ -293,7 +291,6 @@ function lvfx.frame(views)
 			elseif draw.mesh then
 				lg.draw(draw.mesh, unpack(draw.mesh_params or {}))
 			end
-	
 			lg.pop()
 		end
 		tclear(view._draws)

@@ -4,13 +4,9 @@ i18n.__call  = function(self, key)
 	return self:get(key)
 end
 
-local d = console and console.d or print
-local i = console and console.i or print
-local e = console and console.e or print
-
 local ok, memoize = pcall(require, "memoize")
 if not ok then
-	i("Memoize not available. Using passthrough.")
+	print("Memoize not available. Using passthrough.")
 	memoize = function(f)
 		return f
 	end
@@ -30,7 +26,7 @@ function i18n:load(file)
 	end
 	local locale
 	local bork = function(msg)
-		e(string.format("Error loading locale %s: %s", file, tostring(msg)))
+		print(string.format("Error loading locale %s: %s", file, tostring(msg)))
 		return false
 	end
 	local ok, msg = pcall(function()
@@ -59,7 +55,7 @@ function i18n:load(file)
 	locale.strings._language    = locale.name
 	self.strings[locale.locale] = locale.strings
 
-	i(string.format("Loaded locale \"%s\" from \"%s\"", locale.locale, file))
+	print(string.format("Loaded locale \"%s\" from \"%s\"", locale.locale, file))
 	self:invalidate_cache()
 
 	return true
@@ -112,7 +108,7 @@ local function gen_get()
 
 			return value.text, value.duration or 5, sfx, fallback
 		else
-			d(string.format(
+			print(string.format(
 				"String \"%s\" missing from locale %s and fallback (%s)",
 				key, self.locale, self.fallback
 			))
