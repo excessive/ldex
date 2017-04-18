@@ -15,7 +15,7 @@ local use = {
 	handle_screenshots = true,
 	event_poll         = true,
 	love_draw          = true,
-	log_header         = "Please report this on GitHub at https://github.com/excessive/ludum-dare-37 or\nsend a DM on Twitter to @LandonManning, @shakesoda, or @josefnpat."
+	log_header         = "Please report this on GitHub at https://github.com/excessive/ludum-dare-3x or\nsend a DM on Twitter to @LandonManning or @shakesoda."
 }
 
 if not _G.FLAGS.headless then
